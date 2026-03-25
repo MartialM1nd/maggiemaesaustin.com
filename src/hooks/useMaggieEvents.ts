@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNostr } from '@nostrify/react';
+import { NRelay1 } from '@nostrify/nostrify';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import { useBarRelays } from '@/hooks/useBarRelays';
 import { MAGGIE_MAES_TAG } from '@/lib/config';
@@ -13,15 +13,11 @@ import {
 /**
  * Query upcoming NIP-52 kind:31923 calendar events for Maggie Mae's.
  *
- * - Queries ONLY the bar-specific relays (barRelays), never the user's
- *   personal relay list. This means results are consistent regardless of
- *   who is logged in.
- * - Filters by the configured admin pubkeys as authors.
- * - Validates the #t:maggiemaes tag client-side.
- * - Returns only future/ongoing events sorted by start time.
+ * Connects directly to each bar relay via NRelay1 — completely bypasses
+ * the NPool / user relay list. Queries all bar relays in parallel and
+ * deduplicates results by event id.
  */
 export function useMaggieEvents() {
-  const { nostr } = useNostr();
   const { adminPubkeys } = useAdminConfig();
   const { barRelays } = useBarRelays();
 
@@ -31,15 +27,31 @@ export function useMaggieEvents() {
       const timeout = AbortSignal.timeout(8000);
       const combined = AbortSignal.any([signal, timeout]);
 
-      // Use a dedicated relay group — completely isolated from user relay list
-      const relayGroup = nostr.group(barRelays);
+      const filter = [{ kinds: [31923], authors: adminPubkeys, limit: 100 }];
 
-      const events = await relayGroup.query(
-        [{ kinds: [31923], authors: adminPubkeys, limit: 100 }],
-        { signal: combined },
+      // Query all bar relays in parallel
+      const results = await Promise.allSettled(
+        barRelays.map(async (url) => {
+          const relay = new NRelay1(url);
+          try {
+            return await relay.query(filter, { signal: combined });
+          } finally {
+            relay.close();
+          }
+        }),
       );
 
-      return events
+      // Collect all events, deduplicate by id
+      const seen = new Set<string>();
+      const allEvents = results
+        .flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
+        .filter((e) => {
+          if (seen.has(e.id)) return false;
+          seen.add(e.id);
+          return true;
+        });
+
+      return allEvents
         .map(parseMaggieEvent)
         .filter((e): e is MaggieEvent => e !== null)
         .filter((e) =>

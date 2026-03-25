@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
+import { NRelay1 } from '@nostrify/nostrify';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useBarRelays } from '@/hooks/useBarRelays';
 import { MAGGIE_MAES_TAG } from '@/lib/config';
@@ -92,9 +93,17 @@ export function usePublishMaggieEvent() {
         created_at: Math.floor(Date.now() / 1000),
       });
 
-      // Publish directly to bar relays, not the user's personal relay list
-      const relayGroup = nostr.group(barRelays);
-      await relayGroup.event(signed, { signal: AbortSignal.timeout(8000) });
+      // Publish directly to each bar relay via NRelay1
+      await Promise.allSettled(
+        barRelays.map(async (url) => {
+          const relay = new NRelay1(url);
+          try {
+            await relay.event(signed, { signal: AbortSignal.timeout(8000) });
+          } finally {
+            relay.close();
+          }
+        }),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
