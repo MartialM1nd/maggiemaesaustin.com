@@ -3,6 +3,7 @@ import { NostrEvent, NostrFilter, NPool, NRelay1 } from '@nostrify/nostrify';
 import { NostrContext } from '@nostrify/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useBarRelays } from '@/hooks/useBarRelays';
 
 interface NostrProviderProps {
   children: React.ReactNode;
@@ -11,20 +12,28 @@ interface NostrProviderProps {
 const NostrProvider: React.FC<NostrProviderProps> = (props) => {
   const { children } = props;
   const { config } = useAppContext();
+  const { barRelays } = useBarRelays();
 
   const queryClient = useQueryClient();
 
   // Create NPool instance only once
   const pool = useRef<NPool | undefined>(undefined);
 
-  // Use refs so the pool always has the latest data
+  // Use refs so the pool always has the latest relay data
   const relayMetadata = useRef(config.relayMetadata);
+  const barRelaysRef = useRef(barRelays);
 
-  // Invalidate Nostr queries when relay metadata changes
+  // Keep refs in sync
   useEffect(() => {
     relayMetadata.current = config.relayMetadata;
     queryClient.invalidateQueries({ queryKey: ['nostr'] });
   }, [config.relayMetadata, queryClient]);
+
+  useEffect(() => {
+    barRelaysRef.current = barRelays;
+    // Invalidate bar event queries when bar relays change
+    queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
+  }, [barRelays, queryClient]);
 
   // Initialize NPool only once
   if (!pool.current) {
@@ -35,26 +44,41 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
       reqRouter(filters: NostrFilter[]) {
         const routes = new Map<string, NostrFilter[]>();
 
-        // Route to all read relays
-        const readRelays = relayMetadata.current.relays
-          .filter(r => r.read)
-          .map(r => r.url);
+        // Check if this is a bar event query (kind:31923)
+        const isBarEventQuery = filters.some((f) =>
+          f.kinds?.includes(31923),
+        );
 
-        for (const url of readRelays) {
-          routes.set(url, filters);
+        if (isBarEventQuery) {
+          // Route bar event queries ONLY to bar relays
+          for (const url of barRelaysRef.current) {
+            routes.set(url, filters);
+          }
+        } else {
+          // All other queries go to the user's relay list
+          const readRelays = relayMetadata.current.relays
+            .filter((r) => r.read)
+            .map((r) => r.url);
+
+          for (const url of readRelays) {
+            routes.set(url, filters);
+          }
         }
 
         return routes;
       },
-      eventRouter(_event: NostrEvent) {
-        // Get write relays from metadata
+      eventRouter(event: NostrEvent) {
+        if (event.kind === 31923) {
+          // Bar calendar events publish to bar relays
+          return barRelaysRef.current;
+        }
+
+        // Everything else goes to the user's write relays
         const writeRelays = relayMetadata.current.relays
-          .filter(r => r.write)
-          .map(r => r.url);
+          .filter((r) => r.write)
+          .map((r) => r.url);
 
-        const allRelays = new Set<string>(writeRelays);
-
-        return [...allRelays];
+        return [...new Set(writeRelays)];
       },
       eoseTimeout: 4000,
     });

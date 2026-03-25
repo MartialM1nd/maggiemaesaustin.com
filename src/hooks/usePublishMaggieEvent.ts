@@ -1,8 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
-import { NRelay1 } from '@nostrify/nostrify';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useBarRelays } from '@/hooks/useBarRelays';
 import { MAGGIE_MAES_TAG } from '@/lib/config';
 import type { MaggieStage } from '@/lib/config';
 
@@ -37,7 +35,6 @@ function generateDTag(): string {
 export function usePublishMaggieEvent() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
-  const { barRelays } = useBarRelays();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -93,13 +90,8 @@ export function usePublishMaggieEvent() {
         created_at: Math.floor(Date.now() / 1000),
       });
 
-      // Publish directly to each bar relay via NRelay1
-      await Promise.allSettled(
-        barRelays.map((url) => {
-          const relay = new NRelay1(url);
-          return relay.event(signed, { signal: AbortSignal.timeout(8000) });
-        }),
-      );
+      // eventRouter in NostrProvider automatically routes kind:31923 to bar relays
+      await nostr.event(signed, { signal: AbortSignal.timeout(8000) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
