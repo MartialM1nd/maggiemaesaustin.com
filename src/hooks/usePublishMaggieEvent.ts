@@ -95,13 +95,9 @@ export function usePublishMaggieEvent() {
 
       // Publish directly to each bar relay via NRelay1
       await Promise.allSettled(
-        barRelays.map(async (url) => {
+        barRelays.map((url) => {
           const relay = new NRelay1(url);
-          try {
-            await relay.event(signed, { signal: AbortSignal.timeout(8000) });
-          } finally {
-            relay.close();
-          }
+          return relay.event(signed, { signal: AbortSignal.timeout(8000) });
         }),
       );
     },

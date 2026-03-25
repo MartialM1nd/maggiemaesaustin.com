@@ -28,13 +28,9 @@ export function useMaggieEvents() {
 
       // Query all bar relays in parallel with an independent timeout per relay
       const results = await Promise.allSettled(
-        barRelays.map(async (url) => {
+        barRelays.map((url) => {
           const relay = new NRelay1(url);
-          try {
-            return await relay.query(filter, { signal: AbortSignal.timeout(8000) });
-          } finally {
-            relay.close();
-          }
+          return relay.query(filter, { signal: AbortSignal.timeout(8000) });
         }),
       );
 
