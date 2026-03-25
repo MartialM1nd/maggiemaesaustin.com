@@ -1,14 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useNostr } from '@nostrify/react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useBarRelays } from '@/hooks/useBarRelays';
 import { MAGGIE_MAES_TAG } from '@/lib/config';
 import type { MaggieStage } from '@/lib/config';
 
 export interface PublishEventInput {
   title: string;
   description: string;
-  /** ISO datetime-local string, e.g. "2025-04-04T21:00" */
+  /** ISO datetime-local string e.g. "2025-04-04T21:00" */
   startLocal: string;
-  /** ISO datetime-local string, e.g. "2025-04-05T01:00" (optional) */
+  /** ISO datetime-local string e.g. "2025-04-05T01:00" (optional) */
   endLocal?: string;
   location: string;
   stage: MaggieStage | string;
@@ -17,34 +19,34 @@ export interface PublishEventInput {
   imageUrl?: string;
 }
 
-/** Convert a local datetime string + IANA tz to a unix timestamp. */
+/** Convert a datetime-local string to a unix timestamp (seconds). */
 function localToUnix(localStr: string): number {
-  // datetime-local values are in "YYYY-MM-DDTHH:mm" format
-  // We treat them as America/Chicago (Central Time) by appending the offset.
-  // For correctness we use the Intl API approach: just parse as local and let
-  // the browser handle it. For a production app you'd use a tz library.
   return Math.floor(new Date(localStr).getTime() / 1000);
 }
 
-/** Generate a short random d-tag identifier. */
+/** Generate a unique d-tag identifier. */
 function generateDTag(): string {
   return `maggie-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 /**
- * Mutation to publish a NIP-52 kind:31923 calendar event as Maggie Mae's.
- * The logged-in user must be MAGGIE_MAES_PUBKEY (enforced by the Admin page).
+ * Publish a NIP-52 kind:31923 calendar event directly to the bar relays.
+ * Bypasses the user's personal relay list entirely.
  */
 export function usePublishMaggieEvent() {
-  const { mutateAsync: createEvent } = useNostrPublish();
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const { barRelays } = useBarRelays();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: PublishEventInput) => {
+      if (!user) throw new Error('Not logged in');
+
       const start = localToUnix(input.startLocal);
       const end = input.endLocal ? localToUnix(input.endLocal) : undefined;
 
-      // Build D tags (day-granularity timestamps required by NIP-52 for kind:31923)
+      // NIP-52 requires D tags (day-granularity unix day numbers)
       const secondsInDay = 86400;
       const dTags: string[][] = [];
       if (end) {
@@ -65,10 +67,8 @@ export function usePublishMaggieEvent() {
         ['start', String(start)],
         ['start_tzid', 'America/Chicago'],
         ['location', input.location || '323 E. 6th Street, Austin TX 78701'],
-        // Maggie Mae's custom tags
         ['stage', input.stage],
         ['price', input.price || 'Free'],
-        // Hashtag for filtering
         ['t', MAGGIE_MAES_TAG],
         ['t', 'livemusic'],
         ['t', 'austin'],
@@ -84,24 +84,31 @@ export function usePublishMaggieEvent() {
         tags.push(['image', input.imageUrl]);
       }
 
-      await createEvent({
+      // Sign the event
+      const signed = await user.signer.signEvent({
         kind: 31923,
         content: input.description,
         tags,
+        created_at: Math.floor(Date.now() / 1000),
       });
+
+      // Publish directly to bar relays, not the user's personal relay list
+      const relayGroup = nostr.group(barRelays);
+      await relayGroup.event(signed, { signal: AbortSignal.timeout(8000) });
     },
     onSuccess: () => {
-      // Invalidate all maggie-events queries (key prefix match)
       queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
     },
   });
 }
 
 /**
- * Mutation to publish or update a NIP-52 kind:31925 RSVP for a calendar event.
+ * Publish a NIP-52 kind:31925 RSVP.
+ * RSVPs go through the user's normal relay list (their personal Nostr presence).
  */
 export function usePublishRSVP() {
-  const { mutateAsync: createEvent } = useNostrPublish();
+  const { nostr } = useNostr();
+  const { user } = useCurrentUser();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -116,7 +123,9 @@ export function usePublishRSVP() {
       status: 'accepted' | 'declined' | 'tentative';
       note?: string;
     }) => {
-      await createEvent({
+      if (!user) throw new Error('Not logged in');
+
+      const signed = await user.signer.signEvent({
         kind: 31925,
         content: note ?? '',
         tags: [
@@ -125,7 +134,11 @@ export function usePublishRSVP() {
           ['p', eventAuthorPubkey],
           ['status', status],
         ],
+        created_at: Math.floor(Date.now() / 1000),
       });
+
+      // RSVPs go to the user's own relays via the normal pool
+      await nostr.event(signed, { signal: AbortSignal.timeout(5000) });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({

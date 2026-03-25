@@ -40,8 +40,6 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
           .filter(r => r.read)
           .map(r => r.url);
 
-        console.log('[NostrProvider] reqRouter — read relays:', readRelays, 'filters:', JSON.stringify(filters));
-
         for (const url of readRelays) {
           routes.set(url, filters);
         }

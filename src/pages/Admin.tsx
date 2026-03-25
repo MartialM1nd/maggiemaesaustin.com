@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle } from 'lucide-react';
+import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle, RotateCcw } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 import { Layout } from '@/components/Layout';
 import { LoginArea } from '@/components/auth/LoginArea';
-import { RelayListManager } from '@/components/RelayListManager';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMaggieEvents } from '@/hooks/useMaggieEvents';
 import { usePublishMaggieEvent } from '@/hooks/usePublishMaggieEvent';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
-import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES, DEFAULT_ADMIN_PUBKEYS } from '@/lib/config';
+import { useBarRelays } from '@/hooks/useBarRelays';
+import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES, DEFAULT_ADMIN_PUBKEYS, DEFAULT_BAR_RELAYS } from '@/lib/config';
 import { formatEventDate, formatEventTime } from '@/lib/maggie';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
@@ -300,6 +300,131 @@ function ManageEvents() {
           </button>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── Bar Relays Tab ────────────────────────────────────────────────────────────
+function BarRelaysTab() {
+  const { barRelays, addRelay, removeRelay, resetToDefaults } = useBarRelays();
+  const { toast } = useToast();
+  const [newUrl, setNewUrl] = useState('');
+  const [urlError, setUrlError] = useState('');
+
+  const validateWss = (url: string) => {
+    try {
+      const u = new URL(url.trim());
+      return u.protocol === 'wss:' || u.protocol === 'ws:';
+    } catch {
+      return false;
+    }
+  };
+
+  const handleAdd = () => {
+    setUrlError('');
+    const trimmed = newUrl.trim().replace(/\/$/, '');
+    if (!validateWss(trimmed)) {
+      setUrlError('Must be a valid wss:// relay URL.');
+      return;
+    }
+    if (barRelays.includes(trimmed)) {
+      setUrlError('Relay already in list.');
+      return;
+    }
+    addRelay(trimmed);
+    setNewUrl('');
+    toast({ title: 'Relay added', description: trimmed });
+  };
+
+  const handleRemove = (url: string) => {
+    if (barRelays.length <= 1) {
+      toast({ title: 'Cannot remove', description: 'At least one relay must remain.', variant: 'destructive' });
+      return;
+    }
+    removeRelay(url);
+    toast({ title: 'Relay removed' });
+  };
+
+  const handleReset = () => {
+    resetToDefaults();
+    toast({ title: 'Reset to defaults' });
+  };
+
+  const fieldClass = 'flex-1 bg-background border border-border rounded px-3 py-2 text-sm text-foreground font-mono focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground';
+
+  return (
+    <div className="space-y-5 max-w-2xl">
+      {/* Current relay list */}
+      <div className="bg-background border border-primary/20 rounded-lg p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-xs tracking-widest uppercase text-primary">
+            Active Bar Relays
+          </h3>
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors font-display tracking-wider"
+          >
+            <RotateCcw size={11} /> Reset to defaults
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {barRelays.map((url) => {
+            const isDefault = DEFAULT_BAR_RELAYS.includes(url);
+            return (
+              <div key={url} className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-muted px-3 py-2 rounded font-mono text-foreground truncate">
+                  {url}
+                </code>
+                {isDefault && (
+                  <span className="text-[10px] font-display tracking-wider text-primary border border-primary/30 rounded-full px-2 py-0.5 flex-shrink-0">
+                    Default
+                  </span>
+                )}
+                <button
+                  onClick={() => handleRemove(url)}
+                  disabled={barRelays.length <= 1}
+                  className="text-muted-foreground hover:text-destructive transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Remove relay"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Add relay */}
+        <div className="space-y-2 pt-2 border-t border-border">
+          <p className="font-display text-xs tracking-widest uppercase text-muted-foreground">
+            Add Relay
+          </p>
+          <div className="flex gap-2">
+            <input
+              className={fieldClass}
+              placeholder="wss://relay.example.com"
+              value={newUrl}
+              onChange={(e) => { setNewUrl(e.target.value); setUrlError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            />
+            <button
+              onClick={handleAdd}
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-primary/80 transition-all flex-shrink-0"
+            >
+              <PlusCircle size={13} />
+              Add
+            </button>
+          </div>
+          {urlError && (
+            <p className="flex items-center gap-1.5 text-xs text-destructive font-serif">
+              <AlertTriangle size={11} /> {urlError}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground font-serif">
+            Stored in browser localStorage. Does not affect your personal Nostr relay list.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -624,13 +749,12 @@ export default function Admin() {
 
             {activeTab === 'relays' && (
               <section>
-                <h2 className="font-serif text-xl font-bold text-foreground mb-1">Relay Management</h2>
+                <h2 className="font-serif text-xl font-bold text-foreground mb-1">Bar Event Relays</h2>
                 <p className="text-muted-foreground font-serif text-sm mb-6">
-                  Configure which Nostr relays this site reads from and publishes to. Changes are published as NIP-65 events.
+                  These relays are used exclusively for reading and publishing Maggie Mae's calendar events.
+                  Completely separate from any logged-in user's personal relay list.
                 </p>
-                <div className="max-w-2xl">
-                  <RelayListManager />
-                </div>
+                <BarRelaysTab />
               </section>
             )}
 

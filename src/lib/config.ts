@@ -59,3 +59,20 @@ export const MAGGIE_MAES_TAG = 'maggiemaes';
  */
 export const MAGGIE_MAES_STAGES = ['The Deck', 'Bar & Lounge', 'The Pub'] as const;
 export type MaggieStage = (typeof MAGGIE_MAES_STAGES)[number];
+
+/**
+ * Bar-specific relays — where Maggie Mae's events are published and read from.
+ * These are completely separate from the logged-in user's personal relay list.
+ *
+ * - relay.nostr.place: primary relay where bar events are published
+ * - relay.ditto.pub:   public fallback for broad discoverability
+ *
+ * Configurable at runtime via /admin Relays tab (maggie:barRelays in localStorage).
+ */
+export const DEFAULT_BAR_RELAYS: string[] = [
+  'wss://relay.nostr.place',
+  'wss://relay.ditto.pub',
+];
+
+/** localStorage key for the runtime-configurable bar relay list. */
+export const BAR_RELAYS_STORAGE_KEY = 'maggie:barRelays';
