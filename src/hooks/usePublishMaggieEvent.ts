@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_TAG } from '@/lib/config';
+import { MAGGIE_MAES_TAG } from '@/lib/config';
 import type { MaggieStage } from '@/lib/config';
 
 export interface PublishEventInput {
@@ -91,10 +91,8 @@ export function usePublishMaggieEvent() {
       });
     },
     onSuccess: () => {
-      // Invalidate the events query so the list refreshes
-      queryClient.invalidateQueries({
-        queryKey: ['maggie-events', MAGGIE_MAES_PUBKEY],
-      });
+      // Invalidate all maggie-events queries (key prefix match)
+      queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
     },
   });
 }

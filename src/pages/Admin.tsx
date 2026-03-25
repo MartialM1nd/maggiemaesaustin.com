@@ -244,7 +244,7 @@ function ManageEvents() {
         tags: [['e', event.raw.id]],
       });
       toast({ title: 'Deletion requested', description: 'Relays have been asked to remove this event.' });
-      queryClient.invalidateQueries({ queryKey: ['maggie-events', MAGGIE_MAES_PUBKEY] });
+      queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
     } catch (err) {
       toast({ title: 'Delete failed', description: String(err), variant: 'destructive' });
     } finally {
