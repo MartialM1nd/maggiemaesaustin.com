@@ -11,20 +11,25 @@ import {
 } from '@/lib/maggie';
 
 /**
- * Query all upcoming NIP-52 kind:31923 calendar events authored by
- * any configured admin pubkey OR the currently logged-in user.
+ * Query all upcoming NIP-52 kind:31923 calendar events for Maggie Mae's.
  *
- * The union of adminPubkeys + currentUser.pubkey ensures:
- * - Dev installs work regardless of which key published the events
- * - The configured admin list is always included
- * - No dependency on localStorage being pre-populated
+ * Author list = union of:
+ *   - Configured admin pubkeys (from localStorage or DEFAULT_ADMIN_PUBKEYS)
+ *   - Currently logged-in user's pubkey (so dev installs always work)
+ *
+ * The query key includes the full author list so it automatically re-runs
+ * whenever the user logs in/out or the admin list changes.
+ *
+ * The query always runs (no `enabled` gate) — the Events page is public.
+ * If no user is logged in, only the admin pubkeys are queried.
  */
 export function useMaggieEvents() {
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { adminPubkeys } = useAdminConfig();
 
-  // Union of admin list + logged-in user — deduplicated
+  // Build deduped author list — admin pubkeys always included,
+  // logged-in user added when available
   const authorPubkeys = Array.from(
     new Set([...adminPubkeys, ...(user?.pubkey ? [user.pubkey] : [])]),
   );
@@ -65,7 +70,9 @@ export function useMaggieEvents() {
 
       return afterFuture.sort(sortByStart);
     },
-    staleTime: 60_000,
+    staleTime: 30_000,
+    gcTime: 0, // Don't cache empty results — always re-fetch fresh on mount
     retry: 1,
+    refetchOnMount: true,
   });
 }
