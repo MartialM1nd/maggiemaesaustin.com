@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy } from 'lucide-react';
+import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 import { Layout } from '@/components/Layout';
 import { LoginArea } from '@/components/auth/LoginArea';
@@ -10,7 +10,8 @@ import { useMaggieEvents } from '@/hooks/useMaggieEvents';
 import { usePublishMaggieEvent } from '@/hooks/usePublishMaggieEvent';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useQueryClient } from '@tanstack/react-query';
-import { ADMIN_PUBKEYS, MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES } from '@/lib/config';
+import { useAdminConfig } from '@/hooks/useAdminConfig';
+import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES, DEFAULT_ADMIN_PUBKEYS } from '@/lib/config';
 import { formatEventDate, formatEventTime } from '@/lib/maggie';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
@@ -306,22 +307,93 @@ function ManageEvents() {
 // ── Identity Tab ──────────────────────────────────────────────────────────────
 function IdentityTab() {
   const { user } = useCurrentUser();
-  const npub = user ? nip19.npubEncode(user.pubkey) : '';
-  const [copied, setCopied] = useState(false);
+  const { adminPubkeys, addAdmin, removeAdmin } = useAdminConfig();
+  const { toast } = useToast();
+
+  const [newEntry, setNewEntry] = useState('');
+  const [entryError, setEntryError] = useState('');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const copy = (text: string) => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedKey(text);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
+
+  /** Accepts npub1... or raw 64-char hex. Returns hex or null on error. */
+  const resolveToHex = (input: string): string | null => {
+    const trimmed = input.trim();
+    if (trimmed.startsWith('npub1')) {
+      try {
+        const decoded = nip19.decode(trimmed);
+        if (decoded.type === 'npub') return decoded.data as string;
+      } catch {
+        return null;
+      }
+    }
+    if (/^[0-9a-f]{64}$/i.test(trimmed)) return trimmed.toLowerCase();
+    return null;
+  };
+
+  const handleAdd = () => {
+    setEntryError('');
+    const hex = resolveToHex(newEntry);
+    if (!hex) {
+      setEntryError('Enter a valid npub1… or 64-character hex pubkey.');
+      return;
+    }
+    if (adminPubkeys.includes(hex)) {
+      setEntryError('This pubkey is already in the admin list.');
+      return;
+    }
+    addAdmin(hex);
+    setNewEntry('');
+    toast({ title: 'Admin added', description: nip19.npubEncode(hex) });
+  };
+
+  const handleRemove = (pk: string) => {
+    if (adminPubkeys.length <= 1) {
+      toast({
+        title: 'Cannot remove',
+        description: 'At least one admin must remain.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    removeAdmin(pk);
+    toast({ title: 'Admin removed' });
+  };
+
+  const currentNpub = user ? nip19.npubEncode(user.pubkey) : '';
+  const fieldClass =
+    'flex-1 bg-background border border-border rounded px-3 py-2 text-sm text-foreground font-mono focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground';
 
   return (
     <div className="space-y-6 max-w-2xl">
+
+      {/* Current logged-in identity */}
       <div className="bg-background border border-border rounded-lg p-5 space-y-4">
         <h3 className="font-display text-xs tracking-widest uppercase text-muted-foreground">
-          Current Admin Identity
+          Logged-In Identity
         </h3>
         <div className="space-y-3">
+          <div>
+            <p className="font-display text-xs tracking-wider uppercase text-muted-foreground mb-1">npub</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-muted px-3 py-2 rounded font-mono text-foreground truncate">
+                {currentNpub || '—'}
+              </code>
+              {currentNpub && (
+                <button
+                  onClick={() => copy(currentNpub)}
+                  className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                  title="Copy npub"
+                >
+                  {copiedKey === currentNpub ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
+                </button>
+              )}
+            </div>
+          </div>
           <div>
             <p className="font-display text-xs tracking-wider uppercase text-muted-foreground mb-1">Hex Pubkey</p>
             <div className="flex items-center gap-2">
@@ -329,66 +401,113 @@ function IdentityTab() {
                 {user?.pubkey ?? '—'}
               </code>
               {user && (
-                <button onClick={() => copy(user.pubkey)} className="text-muted-foreground hover:text-primary transition-colors">
-                  {copied ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
-                </button>
-              )}
-            </div>
-          </div>
-          <div>
-            <p className="font-display text-xs tracking-wider uppercase text-muted-foreground mb-1">npub</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs bg-muted px-3 py-2 rounded font-mono text-foreground truncate">
-                {npub || '—'}
-              </code>
-              {npub && (
-                <button onClick={() => copy(npub)} className="text-muted-foreground hover:text-primary transition-colors">
-                  <Copy size={14} />
+                <button
+                  onClick={() => copy(user.pubkey)}
+                  className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                  title="Copy hex"
+                >
+                  {copiedKey === user.pubkey ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
                 </button>
               )}
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="bg-background border border-primary/20 rounded-lg p-5 space-y-3">
-        <h3 className="font-display text-xs tracking-widest uppercase text-primary">
-          Configured Admin Pubkeys
-        </h3>
-        <p className="text-muted-foreground font-serif text-sm leading-relaxed">
-          The following pubkeys have admin access to this console. To update, edit{' '}
-          <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono text-foreground">
-            src/lib/config.ts
-          </code>
-          .
-        </p>
-        <div className="space-y-2">
-          {ADMIN_PUBKEYS.map((pk) => (
-            <div key={pk} className="flex items-center gap-2">
-              <code className="flex-1 text-xs bg-muted px-3 py-2 rounded font-mono text-foreground truncate">
-                {pk}
-              </code>
-              {pk === MAGGIE_MAES_PUBKEY && (
-                <span className="text-xs font-display tracking-wider text-primary border border-primary/30 rounded-full px-2 py-0.5 flex-shrink-0">
-                  Bar Identity
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-background border border-border rounded-lg p-5 space-y-2">
-        <h3 className="font-display text-xs tracking-widest uppercase text-muted-foreground">
-          Switch Account
-        </h3>
-        <p className="text-muted-foreground font-serif text-sm">
-          Use the account menu below to switch to Maggie Mae's official Nostr identity before publishing events.
-        </p>
-        <div className="pt-1">
+        <div className="pt-1 border-t border-border">
+          <p className="font-display text-xs tracking-wider uppercase text-muted-foreground mb-2">
+            Switch Account
+          </p>
           <LoginArea className="max-w-xs" />
         </div>
       </div>
+
+      {/* Admin pubkey list */}
+      <div className="bg-background border border-primary/20 rounded-lg p-5 space-y-4">
+        <div>
+          <h3 className="font-display text-xs tracking-widest uppercase text-primary mb-1">
+            Admin Access List
+          </h3>
+          <p className="text-muted-foreground font-serif text-sm leading-relaxed">
+            Only these pubkeys can access the admin console. Changes are saved locally in your browser.
+          </p>
+        </div>
+
+        {/* Existing admins */}
+        <div className="space-y-2">
+          {adminPubkeys.map((pk) => {
+            const npub = nip19.npubEncode(pk);
+            const isBarIdentity = pk === MAGGIE_MAES_PUBKEY;
+            const isDefault = DEFAULT_ADMIN_PUBKEYS.includes(pk);
+            const isMe = user?.pubkey === pk;
+            return (
+              <div key={pk} className="flex items-center gap-2 group">
+                <div className="flex-1 min-w-0 bg-muted rounded px-3 py-2">
+                  <p className="text-xs font-mono text-foreground truncate">{npub}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground truncate">{pk}</p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {isBarIdentity && (
+                    <span className="text-[10px] font-display tracking-wider text-primary border border-primary/30 rounded-full px-2 py-0.5">
+                      Bar Identity
+                    </span>
+                  )}
+                  {isMe && !isBarIdentity && (
+                    <span className="text-[10px] font-display tracking-wider text-green-500 border border-green-500/30 rounded-full px-2 py-0.5">
+                      You
+                    </span>
+                  )}
+                  <button
+                    onClick={() => copy(npub)}
+                    className="text-muted-foreground hover:text-primary transition-colors p-1"
+                    title="Copy npub"
+                  >
+                    {copiedKey === npub ? <CheckCircle2 size={12} className="text-green-500" /> : <Copy size={12} />}
+                  </button>
+                  <button
+                    onClick={() => handleRemove(pk)}
+                    disabled={adminPubkeys.length <= 1}
+                    className="text-muted-foreground hover:text-destructive transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Remove admin"
+                  >
+                    <UserMinus size={13} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Add new admin */}
+        <div className="space-y-2 pt-2 border-t border-border">
+          <p className="font-display text-xs tracking-widest uppercase text-muted-foreground">
+            Add Admin
+          </p>
+          <div className="flex gap-2">
+            <input
+              className={fieldClass}
+              placeholder="npub1… or 64-char hex"
+              value={newEntry}
+              onChange={(e) => { setNewEntry(e.target.value); setEntryError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            />
+            <button
+              onClick={handleAdd}
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-primary/80 transition-all flex-shrink-0"
+            >
+              <UserPlus size={13} />
+              Add
+            </button>
+          </div>
+          {entryError && (
+            <p className="flex items-center gap-1.5 text-xs text-destructive font-serif">
+              <AlertTriangle size={11} /> {entryError}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground font-serif">
+            Accepts npub1… or raw 64-character hex pubkey. Stored in browser localStorage.
+          </p>
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -402,8 +521,9 @@ export default function Admin() {
 
   const { user } = useCurrentUser();
   const [activeTab, setActiveTab] = useState<AdminTab>('publish');
+  const { isAdmin: checkAdmin } = useAdminConfig();
 
-  const isAdmin = user && ADMIN_PUBKEYS.includes(user.pubkey);
+  const isAdmin = user && checkAdmin(user.pubkey);
 
   // ── Not logged in ──────────────────────────────────────────────────────────
   if (!user) {
