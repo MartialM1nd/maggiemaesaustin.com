@@ -23,18 +23,15 @@ export function useMaggieEvents() {
 
   return useQuery({
     queryKey: ['maggie-events', adminPubkeys.join(','), barRelays.join(',')],
-    queryFn: async ({ signal }) => {
-      const timeout = AbortSignal.timeout(8000);
-      const combined = AbortSignal.any([signal, timeout]);
-
+    queryFn: async () => {
       const filter = [{ kinds: [31923], authors: adminPubkeys, limit: 100 }];
 
-      // Query all bar relays in parallel
+      // Query all bar relays in parallel with an independent timeout per relay
       const results = await Promise.allSettled(
         barRelays.map(async (url) => {
           const relay = new NRelay1(url);
           try {
-            return await relay.query(filter, { signal: combined });
+            return await relay.query(filter, { signal: AbortSignal.timeout(8000) });
           } finally {
             relay.close();
           }
