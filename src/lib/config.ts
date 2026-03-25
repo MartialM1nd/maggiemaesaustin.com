@@ -72,6 +72,7 @@ export type MaggieStage = (typeof MAGGIE_MAES_STAGES)[number];
 export const DEFAULT_BAR_RELAYS: string[] = [
   'wss://relay.nostr.place',
   'wss://relay.ditto.pub',
+  'wss://nos.lol',
 ];
 
 /** localStorage key for the runtime-configurable bar relay list. */
