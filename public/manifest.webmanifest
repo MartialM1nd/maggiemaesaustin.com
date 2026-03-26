@@ -1,0 +1,16 @@
+{
+  "name": "Maggie Mae's Bar",
+  "short_name": "Maggie's",
+  "description": "Live music on Sixth Street, Austin TX since 1978",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#d4af37",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -44,13 +44,31 @@ const spaces = [
     tag: 'Rooftop',
   },
   {
-    name: 'Bar & Lounge',
-    sqft: '3,440',
-    capacity: 399,
-    tvs: 5,
-    description: 'A great representation of all things Austin. Exposed brick, distressed wood, and an expansive stage showcasing the city\'s best musicians — all beneath a sweeping mural of Austin history.',
+    name: 'Disco Room',
+    sqft: '2,100',
+    capacity: 250,
+    tvs: 4,
+    description: 'A vibrant space with a polished dance floor, disco ball, and high-energy atmosphere. Perfect for funk, disco, and dance parties.',
     image: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93d9bfea9513f36eab5_100A0387-min.jpg',
-    tag: 'Main Stage',
+    tag: 'Dance Floor',
+  },
+  {
+    name: 'Piano Room',
+    sqft: '800',
+    capacity: 75,
+    tvs: 2,
+    description: 'An intimate space featuring a grand piano. Ideal for singer-songwriters, jazz ensembles, and acoustic performances.',
+    image: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93d9bfea9513f36eab5_100A0387-min.jpg',
+    tag: 'Intimate',
+  },
+  {
+    name: 'Gibson Room',
+    sqft: '1,200',
+    capacity: 150,
+    tvs: 3,
+    description: 'A guitar-themed performance space featuring backline equipment and vintage amps. Named in tribute to the iconic Gibson guitar legacy.',
+    image: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93d9bfea9513f36eab5_100A0387-min.jpg',
+    tag: 'Performance',
   },
   {
     name: 'The Pub',
@@ -65,9 +83,9 @@ const spaces = [
 
 const stats = [
   { icon: <Star className="w-6 h-6" />, value: '1978', label: 'Est.' },
-  { icon: <Music className="w-6 h-6" />, value: '2', label: 'Stages' },
+  { icon: <Music className="w-6 h-6" />, value: '5', label: 'Stages' },
   { icon: <Wine className="w-6 h-6" />, value: '5', label: 'Bars' },
-  { icon: <Users className="w-6 h-6" />, value: '987', label: 'Capacity' },
+  { icon: <Users className="w-6 h-6" />, value: '1063', label: 'Capacity' },
 ];
 
 export default function Index() {

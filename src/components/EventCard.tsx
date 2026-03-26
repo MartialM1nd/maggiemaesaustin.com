@@ -19,7 +19,9 @@ import { cn } from '@/lib/utils';
 
 const stageColors: Record<string, string> = {
   'The Deck': 'border-primary text-primary',
-  'Bar & Lounge': 'border-amber-500 text-amber-500',
+  'Disco Room': 'border-amber-500 text-amber-500',
+  'Piano Room': 'border-purple-500 text-purple-500',
+  'Gibson Room': 'border-cyan-500 text-cyan-500',
   'The Pub': 'border-muted-foreground text-muted-foreground',
 };
 

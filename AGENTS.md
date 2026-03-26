@@ -1,6 +1,6 @@
 # Project Overview
 
-This project is a Nostr client application built with React 18.x, TailwindCSS 3.x, Vite, shadcn/ui, and Nostrify.
+This project is the **Maggie Mae's Bar** website — a Nostr-powered live music venue website built with React 18.x, TailwindCSS 3.x, Vite, shadcn/ui, and Nostrify. It displays calendar events (NIP-52), allows RSVPs, and includes an admin panel for publishing events.
 
 ## Technology Stack
 
@@ -12,6 +12,84 @@ This project is a Nostr client application built with React 18.x, TailwindCSS 3.
 - **React Router**: For client-side routing with BrowserRouter and ScrollToTop functionality
 - **TanStack Query**: For data fetching, caching, and state management
 - **TypeScript**: For type-safe JavaScript development
+
+## Maggie Mae's Configuration
+
+The project includes venue-specific Nostr configuration in `/src/lib/config.ts`:
+
+```typescript
+// The Nostr public key (hex) that "owns" the bar's events
+export const MAGGIE_MAES_PUBKEY = 'ac391a41b2cfb30d77480b5c32322e1989db91db89a253775162871677d1954e';
+
+// Default admin pubkeys (configurable at runtime via /admin page)
+export const DEFAULT_ADMIN_PUBKEYS: string[] = [MAGGIE_MAES_PUBKEY];
+
+// localStorage key for runtime-configurable admin pubkey list
+export const ADMIN_PUBKEYS_STORAGE_KEY = 'maggie:adminPubkeys';
+
+// Hashtag applied to all bar events for filtering
+export const MAGGIE_MAES_TAG = 'maggiemaes';
+
+// Venue stages/spaces
+export const MAGGIE_MAES_STAGES = ['The Deck', 'Bar & Lounge', 'The Pub'] as const;
+export type MaggieStage = (typeof MAGGIE_MAES_STAGES)[number];
+
+// Bar-specific relay pool (separate from user relays)
+export const DEFAULT_BAR_RELAYS: string[] = [
+  'wss://relay.nostr.place',
+  'wss://relay.ditto.pub',
+  'wss://nos.lol',
+];
+
+export const BAR_RELAYS_STORAGE_KEY = 'maggie:barRelays';
+```
+
+### Maggie Mae's Custom NIP-52 Extensions
+
+The project extends NIP-52 calendar events with venue-specific tags:
+
+| Tag | Description | Example |
+|-----|-------------|---------|
+| `stage` | Which venue stage | `"The Deck"`, `"Bar & Lounge"`, `"The Pub"` |
+| `price` | Cover price | `"$10"`, `"Free"`, `"$20"` |
+
+Events are filtered by the `t: maggiemaes` hashtag to ensure only official bar events are displayed.
+
+### MaggieEvent Type
+
+The `src/lib/maggie.ts` module provides typed representations of NIP-52 calendar events:
+
+```typescript
+interface MaggieEvent {
+  raw: NostrEvent;
+  id: string;           // d-tag identifier
+  title: string;
+  description: string;
+  start: number;        // Unix timestamp (seconds)
+  end: number | undefined;
+  timezone: string;     // IANA timezone e.g. "America/Chicago"
+  location: string;
+  image: string | undefined;
+  stage: MaggieStage | string;   // Custom: venue stage
+  price: string;                 // Custom: cover price e.g. "$10" or "Free"
+  summary: string;
+}
+
+interface MaggieRSVP {
+  raw: NostrEvent;
+  pubkey: string;
+  status: 'accepted' | 'declined' | 'tentative';
+  eventCoord: string;   // "31923:<pubkey>:<d-tag>"
+  note: string;
+}
+```
+
+Helper functions:
+- `parseMaggieEvent(event)` - Parse raw kind:31923 event → MaggieEvent
+- `parseRSVP(event)` - Parse raw kind:31925 event → MaggieRSVP
+- `isFutureEvent(event)` - Check if event is upcoming/current
+- `sortByStart(a, b)` - Sort events by start time
+- `formatEventDate(ts, tz)` / `formatEventTime(ts, tz)` - Display formatters
 
 ## Project Structure
 
@@ -38,7 +116,22 @@ This project is a Nostr client application built with React 18.x, TailwindCSS 3.
   - `useNWC`: Nostr Wallet Connect connection management
   - `useNWCContext`: Access NWC context provider
   - `useShakespeare`: AI chat completions with Shakespeare AI API
-- `/src/pages/`: Page components used by React Router (Index, NotFound)
+  - `useMaggieEvents`: Query NIP-52 calendar events for the venue
+  - `usePublishMaggieEvent`: Publish calendar events (admin only)
+  - `usePublishRSVP`: Publish event RSVPs
+  - `useEventRSVPs`: Query RSVPs for a specific event
+  - `useAdminConfig`: Runtime admin pubkey management
+  - `useBarRelays`: Venue-specific relay pool configuration
+  - `useComments`: NIP-99 based comment threads
+  - `usePostComment`: Post a comment to an event
+- `/src/pages/`: Page components used by React Router
+  - `Index.tsx` - Home page with hero, venue info, gallery
+  - `Events.tsx` - Live music events calendar (NIP-52 kind 31923)
+  - `Contact.tsx` - Contact page with hours and location
+  - `Admin.tsx` - Admin panel for publishing events
+  - `NIP19Page.tsx` - NIP-19 identifier handling (npub, note, naddr)
+  - `Messages.tsx` - Direct messages interface
+  - `NotFound.tsx` - 404 page
 - `/src/lib/`: Utility functions and shared logic
 - `/src/contexts/`: React context providers (AppContext, NWCContext, DMContext)
   - `useDMContext`: Hook exported from DMContext for direct messaging (NIP-04 & NIP-17)
@@ -283,12 +376,12 @@ Whenever new kinds are generated, the `NIP.md` file in the project must be creat
 
 **✅ Secure - Filtering by trusted authors:**
 ```typescript
-import { ADMIN_PUBKEYS } from '@/lib/admins';
+import { DEFAULT_ADMIN_PUBKEYS, getAdminPubkeys } from '@/lib/config';
 
 // Query organizer appointments - ONLY accept events from admins
 const events = await nostr.query([{
   kinds: [30078],
-  authors: ADMIN_PUBKEYS, // CRITICAL: Only trust admin authors
+  authors: getAdminPubkeys(), // CRITICAL: Only trust admin authors
   '#d': ['pathos-organizers'],
   limit: 1
 }]);
@@ -906,7 +999,6 @@ const defaultConfig: AppConfig = {
     relays: [
       { url: 'wss://relay.ditto.pub', read: true, write: true },
       { url: 'wss://relay.primal.net', read: true, write: true },
-      { url: 'wss://relay.damus.io', read: true, write: true },
     ],
     updatedAt: 0,
   },

@@ -12,7 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import { useBarRelays } from '@/hooks/useBarRelays';
 import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES, DEFAULT_ADMIN_PUBKEYS, DEFAULT_BAR_RELAYS } from '@/lib/config';
-import { formatEventDate, formatEventTime } from '@/lib/maggie';
+import { formatEventDate, formatEventTime, type MaggieEvent } from '@/lib/maggie';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
 
@@ -232,7 +232,7 @@ function ManageEvents() {
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const handleDelete = async (event: (typeof events)[0]) => {
+  const handleDelete = async (event: MaggieEvent) => {
     if (!event) return;
     const confirmed = window.confirm(`Delete "${event.title}"? This will request deletion via NIP-09.`);
     if (!confirmed) return;
@@ -561,7 +561,7 @@ function IdentityTab() {
           {adminPubkeys.map((pk) => {
             const npub = nip19.npubEncode(pk);
             const isBarIdentity = pk === MAGGIE_MAES_PUBKEY;
-            const isDefault = DEFAULT_ADMIN_PUBKEYS.includes(pk);
+            const _isDefault = DEFAULT_ADMIN_PUBKEYS.includes(pk);
             const isMe = user?.pubkey === pk;
             return (
               <div key={pk} className="flex items-center gap-2 group">

@@ -57,7 +57,7 @@ export const MAGGIE_MAES_TAG = 'maggiemaes';
 /**
  * The three stage/space names used in event publishing.
  */
-export const MAGGIE_MAES_STAGES = ['The Deck', 'Bar & Lounge', 'The Pub'] as const;
+export const MAGGIE_MAES_STAGES = ['The Pub', 'Disco Room', 'Piano Room', 'Gibson Room', 'The Deck'] as const;
 export type MaggieStage = (typeof MAGGIE_MAES_STAGES)[number];
 
 /**

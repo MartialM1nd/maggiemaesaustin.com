@@ -1,5 +1,5 @@
 import { useSeoMeta } from '@unhead/react';
-import { Calendar, Music, ExternalLink, Loader2 } from 'lucide-react';
+import { Calendar, Music, ExternalLink } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { EventCard } from '@/components/EventCard';
 import { useMaggieEvents } from '@/hooks/useMaggieEvents';
@@ -10,7 +10,9 @@ import { Link } from 'react-router-dom';
 
 const stageColors: Record<string, string> = {
   'The Deck': 'border-primary text-primary',
-  'Bar & Lounge': 'border-amber-500 text-amber-500',
+  'Disco Room': 'border-amber-500 text-amber-500',
+  'Piano Room': 'border-purple-500 text-purple-500',
+  'Gibson Room': 'border-cyan-500 text-cyan-500',
   'The Pub': 'border-muted-foreground text-muted-foreground',
 };
 
