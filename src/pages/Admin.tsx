@@ -48,14 +48,67 @@ function PublishEventForm() {
     title: '',
     summary: '',
     description: '',
-    startLocal: '',
-    endLocal: '',
+    startDate: '',
+    startTime: '',
+    endTime: '',
     location: '323 E. 6th Street, Austin TX 78701',
     stage: MAGGIE_MAES_STAGES[0] as string,
     price: 'Free',
     imageUrl: '',
   });
   const [published, setPublished] = useState(false);
+
+  // Generate time slots from 4pm to 4am
+  const timeSlots: { value: string; label: string }[] = [];
+  for (let h = 16; h <= 28; h++) {
+    const hour24 = h > 24 ? h - 24 : h;
+    for (const min of ['00', '30']) {
+      const displayHour = hour24 > 12 ? hour24 - 12 : hour24;
+      const ampm = hour24 >= 12 && h <= 28 ? (hour24 === 24 ? 'AM' : 'PM') : (hour24 === 12 ? 'PM' : 'AM');
+      timeSlots.push({
+        value: `${String(hour24).padStart(2, '0')}:${min}`,
+        label: `${displayHour}:${min} ${ampm}`,
+      });
+    }
+  }
+
+  // Derive startLocal and endLocal from form fields
+  const getStartLocal = () => {
+    if (!form.startDate || !form.startTime) return '';
+    return `${form.startDate}T${form.startTime}`;
+  };
+
+  const getEndLocal = () => {
+    if (!form.startDate || !form.endTime) return '';
+    // If end time is "earlier" than start time numerically (e.g., 01:00 vs 21:00), it's next day
+    const endHour = parseInt(form.endTime.split(':')[0]);
+    const startHour = parseInt(form.startTime.split(':')[0]);
+    const isNextDay = endHour < startHour;
+    
+    let endDate = form.startDate;
+    if (isNextDay) {
+      const d = new Date(form.startDate);
+      d.setDate(d.getDate() + 1);
+      endDate = d.toISOString().split('T')[0];
+    }
+    return `${endDate}T${form.endTime}`;
+  };
+
+  const set = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+
+    // Auto-populate end time with start + 4 hours if start time is set and end is empty
+    if (field === 'startTime' && value && !form.endTime) {
+      const [h, m] = value.split(':').map(Number);
+      let endHour = h + 4;
+      const endMin = m;
+      if (endHour >= 24) {
+        endHour = endHour - 24;
+      }
+      const endTimeValue = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+      setForm((prev) => ({ ...prev, endTime: endTimeValue }));
+    }
+  };
 
   // Templates
   const [templates, setTemplates] = useLocalStorage<EventTemplate[]>('maggie:eventTemplates', []);
@@ -129,22 +182,10 @@ function PublishEventForm() {
     toast({ title: 'Template deleted', description: `"${template.name}" removed.` });
   };
 
-  const set = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    
-    // Auto-populate end date with start + 4 hours if start is set and end is empty
-    if (field === 'startLocal' && value && !form.endLocal) {
-      const startDate = new Date(value);
-      startDate.setHours(startDate.getHours() + 4);
-      const endDate = startDate.toISOString().slice(0, 16);
-      setForm((prev) => ({ ...prev, endLocal: endDate }));
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.startLocal) {
-      toast({ title: 'Missing fields', description: 'Title and start time are required.', variant: 'destructive' });
+    if (!form.title || !form.startDate || !form.startTime) {
+      toast({ title: 'Missing fields', description: 'Title, date, and start time are required.', variant: 'destructive' });
       return;
     }
     publishEvent(
@@ -152,8 +193,8 @@ function PublishEventForm() {
         title: form.title,
         summary: form.summary,
         description: form.description,
-        startLocal: form.startLocal,
-        endLocal: form.endLocal || undefined,
+        startLocal: getStartLocal(),
+        endLocal: getEndLocal() || undefined,
         location: form.location,
         stage: form.stage,
         price: form.price,
@@ -167,8 +208,9 @@ function PublishEventForm() {
             title: '',
             summary: '',
             description: '',
-            startLocal: '',
-            endLocal: '',
+            startDate: '',
+            startTime: '',
+            endTime: '',
             location: '323 E. 6th Street, Austin TX 78701',
             stage: MAGGIE_MAES_STAGES[0],
             price: 'Free',
@@ -243,28 +285,48 @@ function PublishEventForm() {
           />
         </div>
 
-        {/* Start */}
+        {/* Date */}
         <div>
-          <label className={labelClass}>Start Date & Time *</label>
+          <label className={labelClass}>Date *</label>
           <input
-            type="datetime-local"
+            type="date"
             className={fieldClass}
-            value={form.startLocal}
-            onChange={(e) => set('startLocal', e.target.value)}
+            value={form.startDate}
+            onChange={(e) => set('startDate', e.target.value)}
             required
           />
         </div>
 
-        {/* End */}
+        {/* Start Time */}
         <div>
-          <label className={labelClass}>End Date & Time *</label>
-          <input
-            type="datetime-local"
+          <label className={labelClass}>Start Time *</label>
+          <select
             className={fieldClass}
-            value={form.endLocal}
-            onChange={(e) => set('endLocal', e.target.value)}
+            value={form.startTime}
+            onChange={(e) => set('startTime', e.target.value)}
             required
-          />
+          >
+            <option value="">Select time...</option>
+            {timeSlots.map((slot) => (
+              <option key={slot.value} value={slot.value}>{slot.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* End Time */}
+        <div>
+          <label className={labelClass}>End Time *</label>
+          <select
+            className={fieldClass}
+            value={form.endTime}
+            onChange={(e) => set('endTime', e.target.value)}
+            required
+          >
+            <option value="">Select time...</option>
+            {timeSlots.map((slot) => (
+              <option key={slot.value} value={slot.value}>{slot.label}</option>
+            ))}
+          </select>
         </div>
 
         {/* Stage */}
