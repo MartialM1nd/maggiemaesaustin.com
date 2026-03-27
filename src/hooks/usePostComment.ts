@@ -53,7 +53,7 @@ function makeCommentTags(scope: 'root' | 'reply', target: NostrEvent | URL | `#$
 
   const d = (typeof target === 'string' || target instanceof URL)
     ? ''
-    : target.tags.find(([name]) => name === 'd')?.[1] ?? '';
+    : target.tags?.find(([name]) => name === 'd')?.[1] ?? '';
 
   if (typeof target === 'string') {
     tags.push(['I', target]);

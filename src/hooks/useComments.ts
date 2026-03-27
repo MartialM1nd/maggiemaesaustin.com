@@ -15,7 +15,7 @@ export function useComments(root: NostrEvent | URL | `#${string}`, limit?: numbe
       } else if (root instanceof URL) {
         filter['#I'] = [root.toString()];
       } else if (NKinds.addressable(root.kind)) {
-        const d = root.tags.find(([name]) => name === 'd')?.[1] ?? '';
+        const d = root.tags?.find(([name]) => name === 'd')?.[1] ?? '';
         filter['#A'] = [`${root.kind}:${root.pubkey}:${d}`];
       } else if (NKinds.replaceable(root.kind)) {
         filter['#A'] = [`${root.kind}:${root.pubkey}:`];
@@ -33,7 +33,7 @@ export function useComments(root: NostrEvent | URL | `#${string}`, limit?: numbe
 
       // Helper function to get tag value
       const getTagValue = (event: NostrEvent, tagName: string): string | undefined => {
-        const tag = event.tags.find(([name]) => name === tagName);
+        const tag = event.tags?.find(([name]) => name === tagName);
         return tag?.[1];
       };
 

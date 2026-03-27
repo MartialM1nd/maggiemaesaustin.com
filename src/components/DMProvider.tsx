@@ -895,7 +895,7 @@ export function DMProvider({ children, config }: DMProviderProps) {
 
       let conversationPartner: string;
       if (sealEvent.pubkey === user.pubkey) {
-        const recipient = messageEvent.tags.find(([name]) => name === 'p')?.[1];
+        const recipient = messageEvent.tags?.find(([name]) => name === 'p')?.[1];
         if (!recipient || recipient === user.pubkey) {
           return {
             processedMessage: {
@@ -1126,7 +1126,7 @@ export function DMProvider({ children, config }: DMProviderProps) {
           if (msg.kind === 4) {
             // NIP-04 message
             const otherPubkey = msg.pubkey === user?.pubkey
-              ? msg.tags.find(([name]) => name === 'p')?.[1]
+              ? msg.tags?.find(([name]) => name === 'p')?.[1]
               : msg.pubkey;
 
             if (otherPubkey && user?.signer?.nip04) {

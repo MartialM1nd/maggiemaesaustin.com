@@ -55,7 +55,7 @@ export function useZaps(
       // Query for zap receipts for this specific event
       if (actualTarget.kind >= 30000 && actualTarget.kind < 40000) {
         // Addressable event
-        const identifier = actualTarget.tags.find((t) => t[0] === 'd')?.[1] || '';
+        const identifier = actualTarget.tags?.find((t) => t[0] === 'd')?.[1] || '';
         const events = await nostr.query([{
           kinds: [9735],
           '#a': [`${actualTarget.kind}:${actualTarget.pubkey}:${identifier}`],
@@ -88,7 +88,7 @@ export function useZaps(
       // Try multiple methods to extract the amount:
 
       // Method 1: amount tag (from zap request, sometimes copied to receipt)
-      const amountTag = zap.tags.find(([name]) => name === 'amount')?.[1];
+      const amountTag = zap.tags?.find(([name]) => name === 'amount')?.[1];
       if (amountTag) {
         const millisats = parseInt(amountTag);
         sats += Math.floor(millisats / 1000);
@@ -96,7 +96,7 @@ export function useZaps(
       }
 
       // Method 2: Extract from bolt11 invoice
-      const bolt11Tag = zap.tags.find(([name]) => name === 'bolt11')?.[1];
+      const bolt11Tag = zap.tags?.find(([name]) => name === 'bolt11')?.[1];
       if (bolt11Tag) {
         try {
           const invoiceSats = nip57.getSatoshisAmountFromBolt11(bolt11Tag);
@@ -108,7 +108,7 @@ export function useZaps(
       }
 
       // Method 3: Parse from description (zap request JSON)
-      const descriptionTag = zap.tags.find(([name]) => name === 'description')?.[1];
+      const descriptionTag = zap.tags?.find(([name]) => name === 'description')?.[1];
       if (descriptionTag) {
         try {
           const zapRequest = JSON.parse(descriptionTag);
