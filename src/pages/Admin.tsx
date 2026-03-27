@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle, RotateCcw, Save } from 'lucide-react';
+import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle, RotateCcw, Save, Pencil } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 import { Layout } from '@/components/Layout';
 import { LoginArea } from '@/components/auth/LoginArea';
@@ -29,6 +29,24 @@ interface EventTemplate {
   imageUrl: string;
 }
 
+// Helper: convert Unix timestamp to YYYY-MM-DD
+function unixToDate(unix: number): string {
+  const date = new Date(unix * 1000);
+  return date.toISOString().split('T')[0];
+}
+
+// Helper: convert Unix timestamp to HH:MM
+function unixToTime(unix: number): string {
+  const date = new Date(unix * 1000);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+// Editing state for existing events
+interface EditingEvent {
+  dTag: string;
+  event: MaggieEvent;
+}
+
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 type AdminTab = 'events' | 'publish' | 'relays' | 'identity';
 
@@ -40,23 +58,55 @@ const TABS: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
 ];
 
 // ── Publish Event Form ─────────────────────────────────────────────────────────
-function PublishEventForm() {
+interface PublishEventFormProps {
+  editingEvent?: EditingEvent | null;
+  onCancelEdit?: () => void;
+}
+
+function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps) {
+  const isEditing = !!editingEvent;
   const { toast } = useToast();
   const { mutate: publishEvent, isPending } = usePublishMaggieEvent();
 
-  const [form, setForm] = useState({
-    title: '',
-    summary: '',
-    description: '',
-    startDate: '',
-    startTime: '',
-    endTime: '',
-    location: '323 E. 6th Street, Austin TX 78701',
-    stage: MAGGIE_MAES_STAGES[0] as string,
-    price: 'Free',
-    imageUrl: '',
-  });
+  // Initialize form with editing event data if provided
+  const getInitialForm = () => {
+    if (editingEvent) {
+      const evt = editingEvent.event;
+      return {
+        title: evt.title,
+        summary: evt.summary,
+        description: evt.description,
+        startDate: unixToDate(evt.start),
+        startTime: unixToTime(evt.start),
+        endTime: evt.end ? unixToTime(evt.end) : '',
+        location: evt.location,
+        stage: evt.stage || MAGGIE_MAES_STAGES[0] as string,
+        price: evt.price,
+        imageUrl: evt.image || '',
+      };
+    }
+    return {
+      title: '',
+      summary: '',
+      description: '',
+      startDate: '',
+      startTime: '',
+      endTime: '',
+      location: '323 E. 6th Street, Austin TX 78701',
+      stage: MAGGIE_MAES_STAGES[0] as string,
+      price: 'Free',
+      imageUrl: '',
+    };
+  };
+
+  const [form, setForm] = useState(getInitialForm);
   const [published, setPublished] = useState(false);
+
+  // Reset form when editingEvent changes
+  useEffect(() => {
+    setForm(getInitialForm());
+    setPublished(false);
+  }, [editingEvent]);
 
   // Generate time slots from 4pm to 4am
   const timeSlots: { value: string; label: string }[] = [];
@@ -199,23 +249,29 @@ function PublishEventForm() {
         stage: form.stage,
         price: form.price,
         imageUrl: form.imageUrl || undefined,
+        existingDTag: isEditing ? editingEvent.dTag : undefined,
       },
       {
         onSuccess: () => {
-          toast({ title: 'Event published!', description: `"${form.title}" is now live on Nostr.` });
+          const action = isEditing ? 'updated' : 'published';
+          toast({ title: `Event ${action}!`, description: `"${form.title}" is now live on Nostr.` });
           setPublished(true);
-          setForm({
-            title: '',
-            summary: '',
-            description: '',
-            startDate: '',
-            startTime: '',
-            endTime: '',
-            location: '323 E. 6th Street, Austin TX 78701',
-            stage: MAGGIE_MAES_STAGES[0],
-            price: 'Free',
-            imageUrl: '',
-          });
+          if (isEditing && onCancelEdit) {
+            onCancelEdit();
+          } else {
+            setForm({
+              title: '',
+              summary: '',
+              description: '',
+              startDate: '',
+              startTime: '',
+              endTime: '',
+              location: '323 E. 6th Street, Austin TX 78701',
+              stage: MAGGIE_MAES_STAGES[0],
+              price: 'Free',
+              imageUrl: '',
+            });
+          }
           setTimeout(() => setPublished(false), 4000);
         },
         onError: (err) => {
@@ -229,8 +285,13 @@ function PublishEventForm() {
   const labelClass = 'block font-display text-xs tracking-widest uppercase text-muted-foreground mb-1.5';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
-      {/* Template Controls */}
+    <form onSubmit={handleSubmit} className={cn('space-y-5 max-w-2xl', isEditing && 'border border-primary/40 rounded-lg p-5 bg-primary/5')}>
+      {isEditing && (
+        <div className="flex items-center gap-2 text-primary text-sm font-display tracking-wider">
+          <Save size={14} />
+          Editing existing event — changes will replace the original
+        </div>
+      )}
       <div className="flex flex-wrap items-end gap-2 p-4 bg-muted/30 rounded-lg border border-border">
         <div className="flex-1 min-w-[200px]">
           <label className={labelClass}>Load Template</label>
@@ -427,25 +488,42 @@ function PublishEventForm() {
         </button>
       </div>
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-primary/80 transition-all shadow-md shadow-primary/20 disabled:opacity-60"
-      >
-        {isPending ? (
-          <><Loader2 size={13} className="animate-spin" /> Publishing…</>
-        ) : published ? (
-          <><CheckCircle2 size={13} /> Published!</>
-        ) : (
-          <><PlusCircle size={13} /> Publish Event</>
+      <div className="flex items-center gap-3">
+        {isEditing && onCancelEdit && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="flex items-center gap-2 px-4 py-2.5 border border-border text-muted-foreground font-display text-xs tracking-widest uppercase rounded hover:border-destructive hover:text-destructive transition-all"
+          >
+            Cancel
+          </button>
         )}
-      </button>
+        <button
+          type="submit"
+          disabled={isPending}
+          className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-primary/80 transition-all shadow-md shadow-primary/20 disabled:opacity-60"
+        >
+          {isPending ? (
+            <><Loader2 size={13} className="animate-spin" /> {isEditing ? 'Updating…' : 'Publishing…'}</>
+          ) : published ? (
+            <><CheckCircle2 size={13} /> {isEditing ? 'Updated!' : 'Published!'}</>
+          ) : isEditing ? (
+            <><Save size={13} /> Update Event</>
+          ) : (
+            <><PlusCircle size={13} /> Publish Event</>
+          )}
+        </button>
+      </div>
     </form>
   );
 }
 
 // ── Manage Events ─────────────────────────────────────────────────────────────
-function ManageEvents() {
+interface ManageEventsProps {
+  onEditEvent: (event: MaggieEvent) => void;
+}
+
+function ManageEvents({ onEditEvent }: ManageEventsProps) {
   const { data: events, isLoading } = useMaggieEvents();
   const { mutateAsync: createEvent } = useNostrPublish();
   const queryClient = useQueryClient();
@@ -506,18 +584,27 @@ function ManageEvents() {
               <p className="text-xs text-primary font-display mt-0.5">{event.price}</p>
             )}
           </div>
-          <button
-            onClick={() => handleDelete(event)}
-            disabled={deletingId === event.id}
-            className="flex-shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors font-display tracking-wider disabled:opacity-50"
-          >
-            {deletingId === event.id ? (
-              <Loader2 size={12} className="animate-spin" />
-            ) : (
-              <Trash2 size={12} />
-            )}
-            Delete
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onEditEvent(event)}
+              className="flex-shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors font-display tracking-wider"
+            >
+              <Pencil size={12} />
+              Edit
+            </button>
+            <button
+              onClick={() => handleDelete(event)}
+              disabled={deletingId === event.id}
+              className="flex-shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors font-display tracking-wider disabled:opacity-50"
+            >
+              {deletingId === event.id ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Trash2 size={12} />
+              )}
+              Delete
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -870,6 +957,18 @@ export default function Admin() {
 
   const isAdmin = user && checkAdmin(user.pubkey);
 
+  // Editing state for existing events
+  const [editingEvent, setEditingEvent] = useState<EditingEvent | null>(null);
+
+  const handleEditEvent = (event: MaggieEvent) => {
+    setEditingEvent({ dTag: event.id, event });
+    setActiveTab('publish');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEvent(null);
+  };
+
   // ── Not logged in ──────────────────────────────────────────────────────────
   if (!user) {
     return (
@@ -953,7 +1052,7 @@ export default function Admin() {
                 <p className="text-muted-foreground font-serif text-sm mb-6">
                   Creates a NIP-52 kind:31923 calendar event on Nostr, visible on the public Events page.
                 </p>
-                <PublishEventForm />
+                <PublishEventForm editingEvent={editingEvent} onCancelEdit={handleCancelEdit} />
               </section>
             )}
 
@@ -963,7 +1062,7 @@ export default function Admin() {
                 <p className="text-muted-foreground font-serif text-sm mb-6">
                   Events authored by the Maggie Mae's identity. Delete sends a NIP-09 deletion request.
                 </p>
-                <ManageEvents />
+                <ManageEvents onEditEvent={handleEditEvent} />
               </section>
             )}
 
