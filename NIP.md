@@ -27,6 +27,7 @@ In addition to standard NIP-52 tags, Maggie Mae's events include the following c
 - `"Disco Room"` - High-energy dance floor space with disco ball
 - `"Piano Room"` - Intimate space with grand piano for acoustic/jazz
 - `"Gibson Room"` - Guitar-themed performance space with backline
+- `"Cypherpunk Lounge"` - Bitcoin/crypto-friendly lounge space
 - `"The Pub"` - Historic ground floor pub area
 
 **Example:**

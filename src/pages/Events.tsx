@@ -13,6 +13,7 @@ const stageColors: Record<string, string> = {
   'Disco Room': 'border-purple-500 text-purple-500',
   'Piano Room': 'border-green-500 text-green-500',
   'Gibson Room': 'border-cyan-500 text-cyan-500',
+  'Cypherpunk Lounge': 'border-orange-500 text-orange-500',
   'The Pub': 'border-primary text-primary',
 };
 
