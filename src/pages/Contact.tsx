@@ -3,13 +3,13 @@ import { MapPin, Clock, ExternalLink, Zap } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 
 const hours = [
-  { day: 'Monday', open: '4:00 PM', close: '12:00 AM' },
-  { day: 'Tuesday', open: '4:00 PM', close: '12:00 AM' },
-  { day: 'Wednesday', open: '4:00 PM', close: '2:00 AM' },
-  { day: 'Thursday', open: '4:00 PM', close: '2:00 AM' },
-  { day: 'Friday', open: '2:00 PM', close: '2:00 AM' },
-  { day: 'Saturday', open: '12:00 PM', close: '2:00 AM' },
-  { day: 'Sunday', open: '12:00 PM', close: '12:00 AM' },
+  { day: 'Monday', open: '7:00 PM', close: '2:00 AM' },
+  { day: 'Tuesday', open: '7:00 PM', close: '2:00 AM' },
+  { day: 'Wednesday', open: '7:00 PM', close: '2:00 AM' },
+  { day: 'Thursday', open: '7:00 PM', close: '2:00 AM' },
+  { day: 'Friday', open: '7:00 PM', close: '2:00 AM' },
+  { day: 'Saturday', open: '7:00 PM', close: '2:00 AM' },
+  { day: 'Sunday', open: '', close: '' },
 ];
 
 const TODAY_INDEX = new Date().getDay(); // 0=Sun, 1=Mon…
@@ -116,7 +116,7 @@ export default function Contact() {
                           )}
                         </span>
                         <span className="font-serif text-sm">
-                          {h.open} – {h.close}
+                          {h.open ? `${h.open} – ${h.close}` : 'Closed'}
                         </span>
                       </li>
                     );
