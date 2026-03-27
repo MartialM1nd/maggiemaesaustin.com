@@ -70,7 +70,7 @@ export function EventDetail({ event }: EventDetailProps) {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-3xl mx-auto px-4 pt-24 pb-8 space-y-8">
       {/* Back link */}
       <Link
         to="/events"
