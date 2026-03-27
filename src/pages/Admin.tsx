@@ -44,8 +44,17 @@ function PublishEventForm() {
   });
   const [published, setPublished] = useState(false);
 
-  const set = (field: string, value: string) =>
+  const set = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    
+    // Auto-populate end date with start + 4 hours if start is set and end is empty
+    if (field === 'startLocal' && value && !form.endLocal) {
+      const startDate = new Date(value);
+      startDate.setHours(startDate.getHours() + 4);
+      const endDate = startDate.toISOString().slice(0, 16);
+      setForm((prev) => ({ ...prev, endLocal: endDate }));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,12 +130,13 @@ function PublishEventForm() {
 
         {/* End */}
         <div>
-          <label className={labelClass}>End Date & Time</label>
+          <label className={labelClass}>End Date & Time *</label>
           <input
             type="datetime-local"
             className={fieldClass}
             value={form.endLocal}
             onChange={(e) => set('endLocal', e.target.value)}
+            required
           />
         </div>
 
