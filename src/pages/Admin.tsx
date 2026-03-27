@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle, RotateCcw, Save } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 import { Layout } from '@/components/Layout';
 import { LoginArea } from '@/components/auth/LoginArea';
@@ -11,10 +11,23 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import { useBarRelays } from '@/hooks/useBarRelays';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES, DEFAULT_ADMIN_PUBKEYS, DEFAULT_BAR_RELAYS } from '@/lib/config';
 import { formatEventDate, formatEventTime, type MaggieEvent } from '@/lib/maggie';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
+
+interface EventTemplate {
+  id: string;
+  name: string;
+  title: string;
+  summary: string;
+  description: string;
+  location: string;
+  stage: string;
+  price: string;
+  imageUrl: string;
+}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 type AdminTab = 'events' | 'publish' | 'relays' | 'identity';
@@ -43,6 +56,78 @@ function PublishEventForm() {
     imageUrl: '',
   });
   const [published, setPublished] = useState(false);
+
+  // Templates
+  const [templates, setTemplates] = useLocalStorage<EventTemplate[]>('maggie:eventTemplates', []);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [templateName, setTemplateName] = useState('');
+
+  const handleLoadTemplate = () => {
+    const template = templates.find(t => t.id === selectedTemplateId);
+    if (template) {
+      setForm(prev => ({
+        ...prev,
+        title: template.title,
+        summary: template.summary,
+        description: template.description,
+        location: template.location,
+        stage: template.stage,
+        price: template.price,
+        imageUrl: template.imageUrl,
+      }));
+      toast({ title: 'Template loaded', description: `"${template.name}" applied. Dates unchanged.` });
+    }
+  };
+
+  const handleSaveTemplate = () => {
+    if (!templateName.trim()) {
+      toast({ title: 'Name required', description: 'Enter a name for this template.', variant: 'destructive' });
+      return;
+    }
+    const newTemplate: EventTemplate = {
+      id: Date.now().toString(),
+      name: templateName.trim(),
+      title: form.title,
+      summary: form.summary,
+      description: form.description,
+      location: form.location,
+      stage: form.stage,
+      price: form.price,
+      imageUrl: form.imageUrl,
+    };
+    setTemplates(prev => [...prev, newTemplate]);
+    setTemplateName('');
+    toast({ title: 'Template saved', description: `"${newTemplate.name}" saved for future use.` });
+  };
+
+  const handleUpdateTemplate = () => {
+    const template = templates.find(t => t.id === selectedTemplateId);
+    if (!template) {
+      toast({ title: 'No template selected', description: 'Select a template to update.', variant: 'destructive' });
+      return;
+    }
+    const updatedTemplate: EventTemplate = {
+      ...template,
+      title: form.title,
+      summary: form.summary,
+      description: form.description,
+      location: form.location,
+      stage: form.stage,
+      price: form.price,
+      imageUrl: form.imageUrl,
+    };
+    setTemplates(prev => prev.map(t => t.id === selectedTemplateId ? updatedTemplate : t));
+    toast({ title: 'Template updated', description: `"${template.name}" updated with current form values.` });
+  };
+
+  const handleDeleteTemplate = () => {
+    const template = templates.find(t => t.id === selectedTemplateId);
+    if (!template) return;
+    if (!confirm(`Delete template "${template.name}"?`)) return;
+    setTemplates(prev => prev.filter(t => t.id !== selectedTemplateId));
+    setSelectedTemplateId('');
+    toast({ title: 'Template deleted', description: `"${template.name}" removed.` });
+  };
 
   const set = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -103,6 +188,48 @@ function PublishEventForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
+      {/* Template Controls */}
+      <div className="flex flex-wrap items-end gap-2 p-4 bg-muted/30 rounded-lg border border-border">
+        <div className="flex-1 min-w-[200px]">
+          <label className={labelClass}>Load Template</label>
+          <select
+            className={fieldClass}
+            value={selectedTemplateId}
+            onChange={(e) => setSelectedTemplateId(e.target.value)}
+          >
+            <option value="">Select a template...</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="button"
+          onClick={handleLoadTemplate}
+          disabled={!selectedTemplateId}
+          className="px-3 py-2 bg-secondary text-secondary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Load
+        </button>
+        <button
+          type="button"
+          onClick={handleUpdateTemplate}
+          disabled={!selectedTemplateId}
+          className="px-3 py-2 bg-secondary text-secondary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Update
+        </button>
+        <button
+          type="button"
+          onClick={handleDeleteTemplate}
+          disabled={!selectedTemplateId}
+          className="p-2 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          title="Delete template"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Title */}
         <div className="md:col-span-2">
@@ -215,6 +342,27 @@ function PublishEventForm() {
             />
           )}
         </div>
+      </div>
+
+      {/* Save as Template */}
+      <div className="flex flex-wrap items-end gap-2 p-4 bg-muted/30 rounded-lg border border-border">
+        <div className="flex-1 min-w-[200px]">
+          <label className={labelClass}>Save as Template</label>
+          <input
+            className={fieldClass}
+            placeholder="Template name (e.g., Blues Night)"
+            value={templateName}
+            onChange={(e) => setTemplateName(e.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleSaveTemplate}
+          className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-secondary/80 transition-colors"
+        >
+          <Save size={13} />
+          Save Template
+        </button>
       </div>
 
       <button
