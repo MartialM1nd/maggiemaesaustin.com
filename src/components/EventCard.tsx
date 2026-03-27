@@ -18,11 +18,11 @@ import { MAGGIE_MAES_PUBKEY } from '@/lib/config';
 import { cn } from '@/lib/utils';
 
 const stageColors: Record<string, string> = {
-  'The Deck': 'border-primary text-primary',
-  'Disco Room': 'border-amber-500 text-amber-500',
-  'Piano Room': 'border-purple-500 text-purple-500',
+  'The Deck': 'border-muted-foreground text-muted-foreground',
+  'Disco Room': 'border-purple-500 text-purple-500',
+  'Piano Room': 'border-green-500 text-green-500',
   'Gibson Room': 'border-cyan-500 text-cyan-500',
-  'The Pub': 'border-muted-foreground text-muted-foreground',
+  'The Pub': 'border-primary text-primary',
 };
 
 function RSVPAvatar({ pubkey }: { pubkey: string }) {
