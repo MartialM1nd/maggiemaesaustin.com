@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Calendar, Music, ExternalLink } from 'lucide-react';
 import { Layout } from '@/components/Layout';
@@ -9,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 
 const stageColors: Record<string, string> = {
-  'The Deck': 'border-muted-foreground text-muted-foreground',
+  'Rooftop Patio': 'border-muted-foreground text-muted-foreground',
   'Disco Room': 'border-purple-500 text-purple-500',
   'Piano Room': 'border-green-500 text-green-500',
   'Gibson Room': 'border-cyan-500 text-cyan-500',
@@ -50,6 +51,11 @@ export default function Events() {
 
   const { data: events, isLoading, isError } = useMaggieEvents();
   const { user } = useCurrentUser();
+  const [selectedStage, setSelectedStage] = useState<string | null>(null);
+
+  const filteredEvents = selectedStage
+    ? events?.filter((e) => e.stage === selectedStage)
+    : events;
 
   return (
     <Layout>
@@ -77,22 +83,30 @@ export default function Events() {
         </div>
       </section>
 
-      {/* ── STAGE LEGEND ──────────────────────────────────────── */}
+      {/* ── STAGE LEGEND (CLICKABLE) ────────────────────────────── */}
       <section className="bg-card border-b border-border py-4">
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start">
             <span className="font-display text-muted-foreground text-xs tracking-widest uppercase">
-              Stages:
+              Filter:
             </span>
-            {Object.entries(stageColors).map(([stage, cls]) => (
-              <span
-                key={stage}
-                className={`flex items-center gap-1.5 border rounded-full px-3 py-0.5 text-xs font-display tracking-wider ${cls}`}
-              >
-                <Music size={10} />
-                {stage}
-              </span>
-            ))}
+            {Object.entries(stageColors).map(([stage, cls]) => {
+              const isActive = selectedStage === stage;
+              return (
+                <button
+                  key={stage}
+                  onClick={() => setSelectedStage(isActive ? null : stage)}
+                  className={`flex items-center gap-1.5 border rounded-full px-3 py-0.5 text-xs font-display tracking-wider transition-all ${
+                    isActive
+                      ? cls.replace('border-', 'bg-').replace('text-', 'bg-') + ' text-white border-transparent'
+                      : `${cls} hover:opacity-80 cursor-pointer`
+                  }`}
+                >
+                  <Music size={10} />
+                  {stage}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -132,14 +146,25 @@ export default function Events() {
           )}
 
           {/* Empty state */}
-          {!isLoading && !isError && events?.length === 0 && (
+          {!isLoading && !isError && !filteredEvents?.length && (
             <div className="flex justify-center">
               <div className="inline-flex flex-col items-center gap-4 p-10 border border-dashed border-primary/30 rounded-lg max-w-md text-center">
                 <Calendar className="text-primary/40 w-10 h-10" />
                 <div>
-                  <p className="font-serif text-foreground font-semibold mb-1">No upcoming events</p>
+                  <p className="font-serif text-foreground font-semibold mb-1">
+                    {selectedStage ? `No events at ${selectedStage}` : 'No upcoming events'}
+                  </p>
                   <p className="text-muted-foreground font-serif text-sm">
-                    Check back soon — we publish events on Nostr. Follow us to get notified.
+                    {selectedStage ? (
+                      <button
+                        onClick={() => setSelectedStage(null)}
+                        className="text-primary hover:underline"
+                      >
+                        Show all events
+                      </button>
+                    ) : (
+                      'Check back soon — we publish events on Nostr. Follow us to get notified.'
+                    )}
                   </p>
                 </div>
                 <a
@@ -155,10 +180,10 @@ export default function Events() {
           )}
 
           {/* Events grid */}
-          {!isLoading && !isError && events && events.length > 0 && (
+          {!isLoading && !isError && filteredEvents && filteredEvents.length > 0 && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {events.map((event) => (
+                {filteredEvents.map((event) => (
                   <EventCard key={`${event.raw.pubkey}:${event.id}`} event={event} />
                 ))}
               </div>

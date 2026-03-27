@@ -21,7 +21,7 @@ const galleryImages = [
   },
   {
     src: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd1f6d6555cf9454a763fb_upstairs11-min.jpg',
-    alt: 'The Deck upstairs',
+    alt: 'Rooftop Patio upstairs',
   },
   {
     src: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd297625d8ce977e89ad8f_sixth4-min.jpg',
@@ -35,7 +35,7 @@ const galleryImages = [
 
 const spaces = [
   {
-    name: 'The Deck',
+    name: 'Rooftop Patio',
     sqft: '4,845',
     capacity: 483,
     tvs: 6,

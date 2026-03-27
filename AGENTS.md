@@ -31,7 +31,7 @@ export const ADMIN_PUBKEYS_STORAGE_KEY = 'maggie:adminPubkeys';
 export const MAGGIE_MAES_TAG = 'maggiemaes';
 
 // Venue stages/spaces
-export const MAGGIE_MAES_STAGES = ['The Deck', 'Bar & Lounge', 'The Pub'] as const;
+export const MAGGIE_MAES_STAGES = ['The Pub', 'Disco Room', 'Piano Room', 'Gibson Room', 'Cypherpunk Lounge', 'Rooftop Patio'] as const;
 export type MaggieStage = (typeof MAGGIE_MAES_STAGES)[number];
 
 // Bar-specific relay pool (separate from user relays)
@@ -50,7 +50,7 @@ The project extends NIP-52 calendar events with venue-specific tags:
 
 | Tag | Description | Example |
 |-----|-------------|---------|
-| `stage` | Which venue stage | `"The Deck"`, `"Bar & Lounge"`, `"The Pub"` |
+| `stage` | Which venue stage | `"Rooftop Patio"`, `"Disco Room"`, `"The Pub"` |
 | `price` | Cover price | `"$10"`, `"Free"`, `"$20"` |
 
 Events are filtered by the `t: maggiemaes` hashtag to ensure only official bar events are displayed.

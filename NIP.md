@@ -23,7 +23,7 @@ In addition to standard NIP-52 tags, Maggie Mae's events include the following c
 | Purpose | Specifies which venue stage/space the event takes place in |
 
 **Allowed Values:**
-- `"The Deck"` - Rooftop balcony stage overlooking Sixth Street
+- `"Rooftop Patio"` - Rooftop balcony stage overlooking Sixth Street
 - `"Disco Room"` - High-energy dance floor space with disco ball
 - `"Piano Room"` - Intimate space with grand piano for acoustic/jazz
 - `"Gibson Room"` - Guitar-themed performance space with backline
@@ -32,7 +32,7 @@ In addition to standard NIP-52 tags, Maggie Mae's events include the following c
 
 **Example:**
 ```json
-["stage", "The Deck"]
+["stage", "Rooftop Patio"]
 ```
 
 ### `price` Tag
@@ -83,7 +83,7 @@ A complete kind:31923 calendar event for Maggie Mae's:
     ["end", "1712287200"],
     ["end_tzid", "America/Chicago"],
     ["location", "323 E. 6th Street, Austin TX 78701"],
-    ["stage", "The Deck"],
+    ["stage", "Rooftop Patio"],
     ["price", "$10"],
     ["t", "maggiemaes"],
     ["t", "livemusic"],
@@ -149,7 +149,7 @@ createEvent({
   startLocal: '2025-04-04T21:00',
   endLocal: '2025-04-05T01:00',
   location: '323 E. 6th Street, Austin TX 78701',
-  stage: 'The Deck',
+  stage: 'Rooftop Patio',
   price: '$10',
   summary: 'Blues Night with The Austin Kings',
 });

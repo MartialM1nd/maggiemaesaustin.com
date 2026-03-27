@@ -20,7 +20,7 @@ import { MAGGIE_MAES_PUBKEY } from '@/lib/config';
 import { cn } from '@/lib/utils';
 
 const stageColors: Record<string, string> = {
-  'The Deck': 'border-muted-foreground text-muted-foreground',
+  'Rooftop Patio': 'border-muted-foreground text-muted-foreground',
   'Disco Room': 'border-purple-500 text-purple-500',
   'Piano Room': 'border-green-500 text-green-500',
   'Gibson Room': 'border-cyan-500 text-cyan-500',
