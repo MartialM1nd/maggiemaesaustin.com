@@ -35,6 +35,7 @@ export interface MaggieEvent {
 /** Parse a raw NIP-52 kind:31923 event into a typed MaggieEvent. Returns null if invalid. */
 export function parseMaggieEvent(event: NostrEvent): MaggieEvent | null {
   if (event.kind !== 31923) return null;
+  if (!event.tags) return null;
 
   const tag = (name: string) => event.tags.find(([t]) => t === name)?.[1];
 
@@ -143,6 +144,7 @@ export interface MaggieRSVP {
 /** Parse a raw kind:31925 RSVP event. Returns null if invalid. */
 export function parseRSVP(event: NostrEvent): MaggieRSVP | null {
   if (event.kind !== 31925) return null;
+  if (!event.tags) return null;
 
   const tag = (name: string) => event.tags.find(([t]) => t === name)?.[1];
 
