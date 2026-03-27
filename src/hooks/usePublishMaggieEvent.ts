@@ -16,6 +16,8 @@ export interface PublishEventInput {
   price: string;
   summary: string;
   imageUrl?: string;
+  /** If provided, the event will replace an existing event with this d-tag (NIP-52 edit) */
+  existingDTag?: string;
 }
 
 /** Convert a datetime-local string to a unix timestamp (seconds). */
@@ -58,8 +60,11 @@ export function usePublishMaggieEvent() {
         dTags.push(['D', String(Math.floor(start / secondsInDay))]);
       }
 
+      // Use existing d-tag if editing, otherwise generate new one
+      const dTag = input.existingDTag || generateDTag();
+
       const tags: string[][] = [
-        ['d', generateDTag()],
+        ['d', dTag],
         ['title', input.title],
         ['summary', input.summary || input.title],
         ['start', String(start)],
