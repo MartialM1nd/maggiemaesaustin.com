@@ -182,14 +182,11 @@ export default function Contact() {
                     <h2 className="font-serif text-xl font-bold text-foreground">Bitcoin Accepted</h2>
                   </div>
                   <p className="text-muted-foreground font-serif leading-relaxed mb-4">
-                    Maggie Mae's is proud to accept Bitcoin — on-chain and via the Lightning Network. Pay for rounds, tabs, and private event bookings with sats.
+                    Maggie Mae's is proud to accept Bitcoin via the Lightning Network. Pay for rounds, tabs, and private event bookings with sats.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1 bg-primary/10 border border-primary/30 text-primary text-xs font-display tracking-wider uppercase rounded">
                       ⚡ Lightning
-                    </span>
-                    <span className="px-3 py-1 bg-primary/10 border border-primary/30 text-primary text-xs font-display tracking-wider uppercase rounded">
-                      ₿ On-Chain
                     </span>
                   </div>
                 </div>
