@@ -1,5 +1,6 @@
 import { nip19 } from 'nostr-tools';
 import { useParams } from 'react-router-dom';
+import { EventPage } from './EventPage';
 import NotFound from './NotFound';
 
 export function NIP19Page() {
@@ -33,10 +34,12 @@ export function NIP19Page() {
       return <div>Event placeholder</div>;
 
     case 'naddr':
-      // AI agent should implement addressable event view here
-      return <div>Addressable event placeholder</div>;
+      if (decoded.data.kind === 31923) {
+        return <EventPage naddr={decoded.data} />;
+      }
+      return <NotFound />;
 
     default:
       return <NotFound />;
   }
-} 
+}

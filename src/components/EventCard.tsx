@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Clock, MapPin, CheckCircle2, Users, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { nip19 } from 'nostr-tools';
+import { Clock, MapPin, CheckCircle2, Users, ArrowRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEventRSVPs, filterRSVPs } from '@/hooks/useEventRSVPs';
@@ -160,15 +162,13 @@ export function EventCard({ event }: EventCardProps) {
               {event.price}
             </span>
 
-            {/* External link */}
-            <a
-              href="https://www.maggiemaesaustin.com"
-              target="_blank"
-              rel="noopener noreferrer"
+            {/* Details link */}
+            <Link
+              to={`/${nip19.naddrEncode({ kind: 31923, pubkey: event.raw.pubkey, identifier: event.id })}`}
               className="flex items-center gap-1 text-xs font-display tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors"
             >
-              Details <ExternalLink size={10} />
-            </a>
+              Details <ArrowRight size={10} />
+            </Link>
           </div>
 
           {/* RSVP section */}
