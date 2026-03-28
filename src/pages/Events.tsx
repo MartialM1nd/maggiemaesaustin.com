@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 const stageColors: Record<string, string> = {
   'The Pub': 'border-primary text-primary',
   'Disco Room': 'border-rose-500 text-rose-500',
-  'Gibson Room': 'border-amber-500 text-amber-500',
+  'Gibson Room': 'border-amber-700 text-amber-700',
   'Piano Room': 'border-emerald-500 text-emerald-500',
   'Rooftop Patio': 'border-slate-400 text-slate-400',
   'Cypherpunk Lounge': 'border-orange-600 text-orange-600',
