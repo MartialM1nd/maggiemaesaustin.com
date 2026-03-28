@@ -10,6 +10,7 @@ import { usePublishMaggieEvent } from '@/hooks/usePublishMaggieEvent';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
+import { useAdminMutations } from '@/hooks/useAdminMutations';
 import { useBarRelays } from '@/hooks/useBarRelays';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES, DEFAULT_ADMIN_PUBKEYS, DEFAULT_BAR_RELAYS } from '@/lib/config';
@@ -739,7 +740,8 @@ function BarRelaysTab() {
 // ── Identity Tab ──────────────────────────────────────────────────────────────
 function IdentityTab() {
   const { user } = useCurrentUser();
-  const { adminPubkeys, addAdmin, removeAdmin } = useAdminConfig();
+  const { adminPubkeys, isOwner } = useAdminConfig();
+  const { addAdmin, removeAdmin, isPending: isMutating } = useAdminMutations();
   const { toast } = useToast();
 
   const [newEntry, setNewEntry] = useState('');
@@ -767,7 +769,11 @@ function IdentityTab() {
     return null;
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
+    if (!isOwner) {
+      toast({ title: 'Permission denied', description: 'Only the venue owner can add admins.', variant: 'destructive' });
+      return;
+    }
     setEntryError('');
     const hex = resolveToHex(newEntry);
     if (!hex) {
@@ -778,22 +784,35 @@ function IdentityTab() {
       setEntryError('This pubkey is already in the admin list.');
       return;
     }
-    addAdmin(hex);
-    setNewEntry('');
-    toast({ title: 'Admin added', description: nip19.npubEncode(hex) });
+    const confirmed = window.confirm(`Are you sure you want to add this pubkey as an admin?\n\nThey will have full access to manage events and settings.`);
+    if (!confirmed) return;
+    try {
+      const newList = [...adminPubkeys, hex];
+      await addAdmin(newList);
+      setNewEntry('');
+      toast({ title: 'Admin added', description: nip19.npubEncode(hex) });
+    } catch (err) {
+      toast({ title: 'Failed to add admin', description: String(err), variant: 'destructive' });
+    }
   };
 
-  const handleRemove = (pk: string) => {
-    if (adminPubkeys.length <= 1) {
-      toast({
-        title: 'Cannot remove',
-        description: 'At least one admin must remain.',
-        variant: 'destructive',
-      });
+  const handleRemove = async (pk: string) => {
+    if (!isOwner) {
+      toast({ title: 'Permission denied', description: 'Only the venue owner can remove admins.', variant: 'destructive' });
       return;
     }
-    removeAdmin(pk);
-    toast({ title: 'Admin removed' });
+    if (adminPubkeys.length <= 1) {
+      toast({ title: 'Cannot remove', description: 'At least one admin must remain.', variant: 'destructive' });
+      return;
+    }
+    const confirmed = window.confirm(`Are you sure you want to remove this admin?\n\nThey will lose access to the admin console.`);
+    if (!confirmed) return;
+    try {
+      await removeAdmin(pk, adminPubkeys);
+      toast({ title: 'Admin removed' });
+    } catch (err) {
+      toast({ title: 'Failed to remove admin', description: String(err), variant: 'destructive' });
+    }
   };
 
   const currentNpub = user ? nip19.npubEncode(user.pubkey) : '';
@@ -859,7 +878,7 @@ function IdentityTab() {
             Admin Access List
           </h3>
           <p className="text-muted-foreground font-serif text-sm leading-relaxed">
-            Only these pubkeys can access the admin console. Changes are saved locally in your browser.
+            Only these pubkeys can access the admin console. Stored on Nostr via NIP-78 (kind 30078). Only the venue owner can modify.
           </p>
         </div>
 
@@ -894,50 +913,64 @@ function IdentityTab() {
                   >
                     {copiedKey === npub ? <CheckCircle2 size={12} className="text-green-500" /> : <Copy size={12} />}
                   </button>
-                  <button
-                    onClick={() => handleRemove(pk)}
-                    disabled={adminPubkeys.length <= 1}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Remove admin"
-                  >
-                    <UserMinus size={13} />
-                  </button>
+                  {isOwner && (
+                    <button
+                      onClick={() => handleRemove(pk)}
+                      disabled={adminPubkeys.length <= 1}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Remove admin"
+                    >
+                      <UserMinus size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Add new admin */}
-        <div className="space-y-2 pt-2 border-t border-border">
-          <p className="font-display text-xs tracking-widest uppercase text-muted-foreground">
-            Add Admin
-          </p>
-          <div className="flex gap-2">
-            <input
-              className={fieldClass}
-              placeholder="npub1… or 64-char hex"
-              value={newEntry}
-              onChange={(e) => { setNewEntry(e.target.value); setEntryError(''); }}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            />
-            <button
-              onClick={handleAdd}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-primary/80 transition-all flex-shrink-0"
-            >
-              <UserPlus size={13} />
-              Add
-            </button>
-          </div>
+        {/* Add new admin - owner only */}
+        {isOwner ? (
+          <div className="space-y-2 pt-2 border-t border-border">
+            <p className="font-display text-xs tracking-widest uppercase text-muted-foreground">
+              Add Admin
+            </p>
+            <div className="flex gap-2">
+              <input
+                className={fieldClass}
+                placeholder="npub1… or 64-char hex"
+                value={newEntry}
+                onChange={(e) => { setNewEntry(e.target.value); setEntryError(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              />
+              <button
+                onClick={handleAdd}
+                disabled={isMutating}
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-primary/80 transition-all flex-shrink-0 disabled:opacity-50"
+              >
+                {isMutating ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />}
+                Add
+              </button>
+            </div>
           {entryError && (
             <p className="flex items-center gap-1.5 text-xs text-destructive font-serif">
               <AlertTriangle size={11} /> {entryError}
             </p>
           )}
           <p className="text-xs text-muted-foreground font-serif">
-            Accepts npub1… or raw 64-character hex pubkey. Stored in browser localStorage.
+            Accepts npub1… or raw 64-character hex pubkey. Stored on Nostr via NIP-78.
           </p>
         </div>
+        ) : (
+          <div className="space-y-2 pt-2 border-t border-border">
+            <p className="font-display text-xs tracking-widest uppercase text-muted-foreground">
+              Add Admin
+            </p>
+            <p className="text-sm text-muted-foreground font-serif">
+              Only the venue owner can modify the admin list.
+            </p>
+          </div>
+        )}
       </div>
 
     </div>

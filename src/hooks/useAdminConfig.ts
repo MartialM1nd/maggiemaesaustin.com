@@ -1,30 +1,30 @@
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { DEFAULT_ADMIN_PUBKEYS, ADMIN_PUBKEYS_STORAGE_KEY } from '@/lib/config';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAdminList } from './useAdminList';
+import { MAGGIE_MAES_PUBKEY, DEFAULT_ADMIN_PUBKEYS } from '@/lib/config';
 
 /**
- * Reactive hook for reading and writing the runtime admin pubkey list.
- * Stored in localStorage under ADMIN_PUBKEYS_STORAGE_KEY.
- * Falls back to DEFAULT_ADMIN_PUBKEYS when nothing is stored.
+ * Reactive hook for reading and writing the admin pubkey list.
+ * 
+ * READS: Uses useAdminList which queries NIP-78 (kind 30078) from Nostr relays.
+ * WRITES: Use useAdminMutations for write operations (owner only).
+ * 
+ * Security:
+ * - List is authored by MAGGIE_MAES_PUBKEY (the venue owner)
+ * - Only the owner can modify the list
+ * - Falls back to DEFAULT_ADMIN_PUBKEYS if Nostr query fails
  */
 export function useAdminConfig() {
-  const [adminPubkeys, setAdminPubkeys] = useLocalStorage<string[]>(
-    ADMIN_PUBKEYS_STORAGE_KEY,
-    DEFAULT_ADMIN_PUBKEYS,
-  );
+  const { user } = useCurrentUser();
+  const { data: adminPubkeys = DEFAULT_ADMIN_PUBKEYS, isLoading } = useAdminList();
 
-  const addAdmin = (pubkey: string) => {
-    const hex = pubkey.trim().toLowerCase();
-    if (!hex || adminPubkeys.includes(hex)) return;
-    setAdminPubkeys([...adminPubkeys, hex]);
-  };
-
-  const removeAdmin = (pubkey: string) => {
-    // Never allow removing the last admin — would lock everyone out
-    if (adminPubkeys.length <= 1) return;
-    setAdminPubkeys(adminPubkeys.filter((pk) => pk !== pubkey));
-  };
+  const isOwner = user?.pubkey === MAGGIE_MAES_PUBKEY;
 
   const isAdmin = (pubkey: string) => adminPubkeys.includes(pubkey);
 
-  return { adminPubkeys, addAdmin, removeAdmin, isAdmin };
+  return {
+    adminPubkeys,
+    isLoading,
+    isOwner,
+    isAdmin,
+  };
 }

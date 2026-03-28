@@ -160,3 +160,49 @@ createEvent({
 | Version | Date | Description |
 |---------|------|-------------|
 | 1.0 | 2024-04-01 | Initial version with stage and price tags |
+| 1.1 | 2025-03-28 | Added NIP-78 admin list storage |
+
+---
+
+# Appendix: Admin List Storage (NIP-78)
+
+Maggie Mae's uses **NIP-78** (kind 30078) for server-side storage of the admin pubkey list. This replaces client-side localStorage with Nostr relay storage.
+
+## Event Structure
+
+| Field | Value |
+|-------|-------|
+| Kind | 30078 (Application-specific data) |
+| Author | `MAGGIE_MAES_PUBKEY` (venue owner) |
+| d-tag | `maggiemaes-admin-list` |
+| Content | JSON array of admin pubkey hex strings |
+
+## Example Event
+
+```json
+{
+  "kind": 30078,
+  "created_at": 1743177600,
+  "tags": [
+    ["d", "maggiemaes-admin-list"],
+    ["alt", "Maggie Mae's Bar admin list"]
+  ],
+  "content": "[\"ac391a41b2cfb30d77480b5c32322e1989db91db89a253775162871677d1954e\",\"abc123...\"]",
+  "pubkey": "ac391a41b2cfb30d77480b5c32322e1989db91db89a253775162871677d1954e"
+}
+```
+
+## Security Model
+
+| Action | Venue Owner | Other Admins | Non-Admin |
+|--------|-------------|--------------|-----------|
+| View admin list | ✅ | ✅ | ✅ (if in list) |
+| Add admin | ✅ | ❌ | ❌ |
+| Remove admin | ✅ | ❌ | ❌ |
+| Publish to Nostr | ✅ | ❌ | ❌ |
+
+The admin list is filtered by `authors: [MAGGIE_MAES_PUBKEY]` to ensure only the venue owner can define the list.
+
+## Fallback
+
+If the NIP-78 event cannot be fetched (e.g., relays are down), the application falls back to `DEFAULT_ADMIN_PUBKEYS` which contains only `MAGGIE_MAES_PUBKEY`. No localStorage fallback is used.
