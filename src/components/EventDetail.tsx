@@ -16,11 +16,11 @@ import { cn } from '@/lib/utils';
 
 const stageColors: Record<string, string> = {
   'The Pub': 'border-primary text-primary',
-  'Disco Room': 'border-purple-500 text-purple-500',
-  'Gibson Room': 'border-cyan-500 text-cyan-500',
-  'Piano Room': 'border-green-500 text-green-500',
-  'Rooftop Patio': 'border-muted-foreground text-muted-foreground',
-  'Cypherpunk Lounge': 'border-orange-500 text-orange-500',
+  'Disco Room': 'border-rose-500 text-rose-500',
+  'Gibson Room': 'border-amber-500 text-amber-500',
+  'Piano Room': 'border-emerald-500 text-emerald-500',
+  'Rooftop Patio': 'border-slate-400 text-slate-400',
+  'Cypherpunk Lounge': 'border-orange-600 text-orange-600',
 };
 
 function RSVPAvatar({ pubkey }: { pubkey: string }) {
