@@ -1,5 +1,7 @@
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAdminList } from './useAdminList';
+import { useTemplateList, type EventTemplate } from './useTemplateList';
+import { useTemplateMutations } from './useTemplateMutations';
 import { MAGGIE_MAES_PUBKEY, DEFAULT_ADMIN_PUBKEYS } from '@/lib/config';
 
 /**
@@ -28,3 +30,6 @@ export function useAdminConfig() {
     isAdmin,
   };
 }
+
+// Re-export template hooks for convenience
+export { useTemplateList, useTemplateMutations, type EventTemplate };

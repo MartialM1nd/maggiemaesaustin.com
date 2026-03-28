@@ -9,26 +9,13 @@ import { useMaggieEvents } from '@/hooks/useMaggieEvents';
 import { usePublishMaggieEvent } from '@/hooks/usePublishMaggieEvent';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAdminConfig } from '@/hooks/useAdminConfig';
+import { useAdminConfig, useTemplateList, useTemplateMutations, type EventTemplate } from '@/hooks/useAdminConfig';
 import { useAdminMutations } from '@/hooks/useAdminMutations';
 import { useBarRelays } from '@/hooks/useBarRelays';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES, DEFAULT_ADMIN_PUBKEYS, DEFAULT_BAR_RELAYS } from '@/lib/config';
 import { formatEventDate, formatEventTime, type MaggieEvent } from '@/lib/maggie';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
-
-interface EventTemplate {
-  id: string;
-  name: string;
-  title: string;
-  summary: string;
-  description: string;
-  location: string;
-  stage: string;
-  price: string;
-  imageUrl: string;
-}
 
 // Helper: convert Unix timestamp to YYYY-MM-DD
 function unixToDate(unix: number): string {
@@ -161,8 +148,9 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
     }
   };
 
-  // Templates
-  const [templates, setTemplates] = useLocalStorage<EventTemplate[]>('maggie:eventTemplates', []);
+  // Templates from Nostr
+  const { data: templates = [] } = useTemplateList();
+  const { createTemplate, updateTemplate, deleteTemplate } = useTemplateMutations();
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [templateName, setTemplateName] = useState('');
 
@@ -183,7 +171,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
     }
   };
 
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
       toast({ title: 'Name required', description: 'Enter a name for this template.', variant: 'destructive' });
       return;
@@ -199,12 +187,16 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
       price: form.price,
       imageUrl: form.imageUrl,
     };
-    setTemplates(prev => [...prev, newTemplate]);
-    setTemplateName('');
-    toast({ title: 'Template saved', description: `"${newTemplate.name}" saved for future use.` });
+    try {
+      await createTemplate(newTemplate)(templates);
+      setTemplateName('');
+      toast({ title: 'Template saved', description: `"${newTemplate.name}" saved to Nostr.` });
+    } catch (err) {
+      toast({ title: 'Failed to save template', description: String(err), variant: 'destructive' });
+    }
   };
 
-  const handleUpdateTemplate = () => {
+  const handleUpdateTemplate = async () => {
     const template = templates.find(t => t.id === selectedTemplateId);
     if (!template) {
       toast({ title: 'No template selected', description: 'Select a template to update.', variant: 'destructive' });
@@ -220,17 +212,25 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
       price: form.price,
       imageUrl: form.imageUrl,
     };
-    setTemplates(prev => prev.map(t => t.id === selectedTemplateId ? updatedTemplate : t));
-    toast({ title: 'Template updated', description: `"${template.name}" updated with current form values.` });
+    try {
+      await updateTemplate(updatedTemplate, templates);
+      toast({ title: 'Template updated', description: `"${template.name}" updated on Nostr.` });
+    } catch (err) {
+      toast({ title: 'Failed to update template', description: String(err), variant: 'destructive' });
+    }
   };
 
-  const handleDeleteTemplate = () => {
+  const handleDeleteTemplate = async () => {
     const template = templates.find(t => t.id === selectedTemplateId);
     if (!template) return;
     if (!confirm(`Delete template "${template.name}"?`)) return;
-    setTemplates(prev => prev.filter(t => t.id !== selectedTemplateId));
-    setSelectedTemplateId('');
-    toast({ title: 'Template deleted', description: `"${template.name}" removed.` });
+    try {
+      await deleteTemplate(selectedTemplateId, templates);
+      setSelectedTemplateId('');
+      toast({ title: 'Template deleted', description: `"${template.name}" removed from Nostr.` });
+    } catch (err) {
+      toast({ title: 'Failed to delete template', description: String(err), variant: 'destructive' });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

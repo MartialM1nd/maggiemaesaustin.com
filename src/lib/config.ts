@@ -23,6 +23,12 @@ export const DEFAULT_ADMIN_PUBKEYS: string[] = [MAGGIE_MAES_PUBKEY];
 export const ADMIN_LIST_DTAG = 'maggiemaes-admin-list';
 
 /**
+ * NIP-78 d-tag for storing event templates on Nostr relays.
+ * Stored as kind:30078 addressable event authored by any admin.
+ */
+export const TEMPLATES_DTAG = 'maggiemaes-event-templates';
+
+/**
  * localStorage key - deprecated, no longer used for admin storage.
  * Kept for reference only.
  * @deprecated Admin list is now stored on Nostr via NIP-78 (kind 30078).
