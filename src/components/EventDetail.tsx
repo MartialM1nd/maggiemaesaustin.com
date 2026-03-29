@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, CheckCircle2, Users } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, CheckCircle2, Users, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,7 +10,7 @@ import { usePublishRSVP } from '@/hooks/usePublishMaggieEvent';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
-import { formatEventDate, formatEventTime, eventCoordinate, type MaggieEvent } from '@/lib/maggie';
+import { formatEventDate, formatEventTime, eventCoordinate, generateICS, type MaggieEvent } from '@/lib/maggie';
 import { MAGGIE_MAES_PUBKEY } from '@/lib/config';
 import { cn } from '@/lib/utils';
 
@@ -132,6 +132,16 @@ export function EventDetail({ event }: EventDetailProps) {
             </span>
           )}
         </div>
+
+        {/* Add to calendar link */}
+        <a
+          href={`data:text/calendar;charset=utf-8,${encodeURIComponent(generateICS(event))}`}
+          download={`${event.id}.ics`}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          <Calendar size={13} />
+          Add to calendar
+        </a>
       </div>
 
       {/* Description */}

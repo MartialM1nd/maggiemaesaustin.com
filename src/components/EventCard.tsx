@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
-import { Clock, MapPin, CheckCircle2, Users, ArrowRight } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, Users, ArrowRight, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEventRSVPs, filterRSVPs } from '@/hooks/useEventRSVPs';
@@ -14,6 +14,7 @@ import {
   formatEventMonth,
   formatEventTime,
   eventCoordinate,
+  generateICS,
   type MaggieEvent,
 } from '@/lib/maggie';
 import { MAGGIE_MAES_PUBKEY } from '@/lib/config';
@@ -128,6 +129,14 @@ export function EventCard({ event }: EventCardProps) {
                 <> – {formatEventTime(event.end, event.timezone)}</>
               )}
             </span>
+            <a
+              href={`data:text/calendar;charset=utf-8,${encodeURIComponent(generateICS(event))}`}
+              download={`${event.id}.ics`}
+              className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Calendar size={10} />
+              Add to calendar
+            </a>
           </div>
 
           <h3 className="font-serif font-bold text-lg text-foreground leading-tight mb-1">

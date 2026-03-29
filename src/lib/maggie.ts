@@ -127,6 +127,37 @@ export function eventCoordinate(event: MaggieEvent): string {
 }
 
 /**
+ * Generate ICS (iCalendar) file content for an event.
+ * Works with Apple Calendar, Google Calendar, Outlook, etc.
+ */
+export function generateICS(event: MaggieEvent): string {
+  const formatICSDate = (ts: number) => {
+    return new Date(ts * 1000).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+
+  const start = formatICSDate(event.start);
+  const end = event.end ? formatICSDate(event.end) : formatICSDate(event.start + 2 * 3600);
+  const now = formatICSDate(Math.floor(Date.now() / 1000));
+
+  const escapeICS = (text: string) =>
+    text.replace(/[,;\\]/g, '\\$&').replace(/\n/g, '\\n');
+
+  return `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Maggie Mae's Bar//EN
+BEGIN:VEVENT
+UID:${event.id}@maggiemaesaustin.com
+DTSTAMP:${now}
+DTSTART:${start}
+DTEND:${end}
+SUMMARY:${escapeICS(event.title)}
+DESCRIPTION:${escapeICS(event.description || event.summary)}
+LOCATION:${escapeICS(event.location)}
+END:VEVENT
+END:VCALENDAR`;
+}
+
+/**
  * A parsed NIP-52 kind:31925 RSVP event.
  */
 export interface MaggieRSVP {
