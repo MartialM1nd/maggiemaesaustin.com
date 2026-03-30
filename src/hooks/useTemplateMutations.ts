@@ -46,8 +46,11 @@ export function useTemplateMutations() {
     },
   });
 
-  const createTemplate = (_template: Omit<EventTemplate, 'id'>) => {
-    return publishTemplates.mutateAsync;
+  const createTemplate = (template: Omit<EventTemplate, 'id'> | EventTemplate) => {
+    return async (currentTemplates: EventTemplate[]) => {
+      const newList = [...currentTemplates, template];
+      return publishTemplates.mutateAsync(newList);
+    };
   };
 
   const updateTemplate = (updatedTemplate: EventTemplate, currentTemplates: EventTemplate[]) => {
