@@ -188,7 +188,7 @@ export default function Index() {
               </div>
               <div className="space-y-4 text-muted-foreground font-serif leading-relaxed">
                 <p>
-                  Maggie Mae's is the epitome of all things Austin. For over 46 years, our 11,000 square feet of event space has been home to 5 bars, 2 stages, and nearly 1,000 guests at a time — right in the heart of Sixth Street, steps from the Convention Center.
+                  Maggie Mae's is the epitome of all things Austin. For nearly 50 years, our 11,000 square feet of event space has been home to 5 bars, 2 stages, and nearly 1,000 guests at a time — right in the heart of Sixth Street, steps from the Convention Center.
                 </p>
                 <p>
                   Kids were born, grandkids grew up, and Maggie Mae's was there for all of it. People met here. Some got married here. Maggie's is first and foremost a pub — a public house, in the truest British sense: a place where the community gathers and shares the joys of the day.
