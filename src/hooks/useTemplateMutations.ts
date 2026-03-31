@@ -48,7 +48,7 @@ export function useTemplateMutations() {
 
   const createTemplate = (template: Omit<EventTemplate, 'id'> | EventTemplate) => {
     return async (currentTemplates: EventTemplate[]) => {
-      const newList = [...currentTemplates, template];
+      const newList = [...currentTemplates, template] as EventTemplate[];
       return publishTemplates.mutateAsync(newList);
     };
   };
