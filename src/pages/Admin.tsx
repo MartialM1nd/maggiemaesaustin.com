@@ -545,6 +545,8 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { user } = useCurrentUser();
+  const currentUserPubkey = user?.pubkey.toLowerCase();
 
   const handleDelete = async (event: MaggieEvent) => {
     if (!event) return;
@@ -585,7 +587,9 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
 
   return (
     <div className="space-y-3 max-w-2xl">
-      {events.map((event) => (
+      {events.map((event) => {
+        const isEventOwner = currentUserPubkey === event.raw.pubkey.toLowerCase();
+        return (
         <div
           key={event.id}
           className="flex items-start justify-between gap-4 p-4 bg-background border border-border rounded-lg"
@@ -601,6 +605,7 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {isEventOwner && (
             <button
               onClick={() => onEditEvent(event)}
               className="flex-shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors font-display tracking-wider"
@@ -608,6 +613,8 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
               <Pencil size={12} />
               Edit
             </button>
+            )}
+            {isEventOwner && (
             <button
               onClick={() => handleDelete(event)}
               disabled={deletingId === event.id}
@@ -620,9 +627,11 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
               )}
               Delete
             </button>
+            )}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
