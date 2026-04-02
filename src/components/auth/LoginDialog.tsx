@@ -2,7 +2,7 @@
 // It is important that all functionality in this file is preserved, and should only be modified if explicitly requested.
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Upload, AlertTriangle, ChevronDown, Shield, ShieldCheck, ShieldX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
@@ -10,7 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useLoginActions } from '@/hooks/useLoginActions';
+import { useAdminConfig } from '@/hooks/useAdminConfig';
 import { DialogTitle } from '@radix-ui/react-dialog';
+import { nip19 } from 'nostr-tools';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -31,6 +33,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
   const [isFileLoading, setIsFileLoading] = useState(false);
   const [nsec, setNsec] = useState('');
   const [bunkerUri, setBunkerUri] = useState('');
+  const [adminCheckInput, setAdminCheckInput] = useState('');
+  const [adminCheckResult, setAdminCheckResult] = useState<'checking' | 'admin' | 'not-admin' | 'invalid'>('checking');
   const [errors, setErrors] = useState<{
     nsec?: string;
     bunker?: string;
@@ -39,6 +43,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
   }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const login = useLoginActions();
+  const { isAdmin, isLoading: adminLoading } = useAdminConfig();
 
   // Reset all state when dialog opens/closes
   useEffect(() => {
@@ -55,6 +60,39 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
       }
     }
   }, [isOpen]);
+
+  const handleAdminCheck = () => {
+    if (!adminCheckInput.trim()) {
+      setAdminCheckResult('invalid');
+      return;
+    }
+
+    try {
+      let pubkey = adminCheckInput.trim();
+      
+      if (pubkey.startsWith('npub1')) {
+        const decoded = nip19.decode(pubkey);
+        if (decoded.type !== 'npub') {
+          setAdminCheckResult('invalid');
+          return;
+        }
+        pubkey = decoded.data;
+      }
+
+      if (!/^[0-9a-f]{64}$/i.test(pubkey)) {
+        setAdminCheckResult('invalid');
+        return;
+      }
+
+      if (isAdmin(pubkey)) {
+        setAdminCheckResult('admin');
+      } else {
+        setAdminCheckResult('not-admin');
+      }
+    } catch {
+      setAdminCheckResult('invalid');
+    }
+  };
 
   const handleExtensionLogin = async () => {
     setIsLoading(true);
@@ -292,6 +330,54 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
 
         <div className="flex size-40 text-8xl bg-primary/10 rounded-full items-center justify-center justify-self-center">
           🔑
+        </div>
+
+        <div className="px-6">
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground text-center">
+              Check if you'll have admin access before logging in
+            </p>
+            <div className="flex gap-2">
+              <Input
+                id="adminCheck"
+                value={adminCheckInput}
+                onChange={(e) => {
+                  setAdminCheckInput(e.target.value);
+                  setAdminCheckResult('checking');
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleAdminCheck()}
+                className="rounded-lg"
+                placeholder="npub1... or hex pubkey"
+                autoComplete="off"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={handleAdminCheck}
+                disabled={adminLoading || !adminCheckInput.trim()}
+              >
+                <Shield className="w-4 h-4" />
+              </Button>
+            </div>
+            {adminCheckResult === 'admin' && (
+              <div className="flex items-center gap-2 text-green-600 justify-center">
+                <ShieldCheck className="w-4 h-4" />
+                <span className="text-sm font-medium">You'll have admin access!</span>
+              </div>
+            )}
+            {adminCheckResult === 'not-admin' && (
+              <div className="flex items-center gap-2 text-orange-600 justify-center">
+                <ShieldX className="w-4 h-4" />
+                <span className="text-sm">No admin access - standard user</span>
+              </div>
+            )}
+            {adminCheckResult === 'invalid' && adminCheckInput.trim() && (
+              <div className="flex items-center gap-2 text-red-500 justify-center">
+                <span className="text-sm">Invalid pubkey format</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className='px-6 pb-6 space-y-4 overflow-y-auto'>
