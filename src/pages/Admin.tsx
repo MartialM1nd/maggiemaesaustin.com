@@ -1001,7 +1001,7 @@ export default function Admin() {
 
   const { user } = useCurrentUser();
   const [activeTab, setActiveTab] = useState<AdminTab>('publish');
-  const { isAdmin: checkAdmin } = useAdminConfig();
+  const { isAdmin: checkAdmin, isLoading: isAdminListLoading } = useAdminConfig();
 
   const isAdmin = user && checkAdmin(user.pubkey);
 
@@ -1029,6 +1029,22 @@ export default function Admin() {
               You need to log in with a Nostr identity to access this page.
             </p>
             <LoginArea className="max-w-xs mx-auto" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // ── Loading admin list ──────────────────────────────────────────────────────
+  if (!isAdmin && isAdminListLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className="text-center space-y-5 max-w-sm">
+            <Loader2 className="w-10 h-10 text-primary/40 mx-auto animate-spin" />
+            <p className="text-muted-foreground font-serif text-sm">
+              Checking authorization&hellip;
+            </p>
           </div>
         </div>
       </Layout>

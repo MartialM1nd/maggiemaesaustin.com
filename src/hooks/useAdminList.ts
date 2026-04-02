@@ -26,7 +26,7 @@ export function useAdminList() {
     DEFAULT_ADMIN_PUBKEYS,
   );
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['admin-list', MAGGIE_MAES_PUBKEY],
     queryFn: async ({ signal }) => {
       const events = await nostr.query(
@@ -42,6 +42,8 @@ export function useAdminList() {
       );
 
       if (events.length === 0) {
+        // No admin list event found — persist the default so stale cache is cleared
+        setPersistedAdmins(DEFAULT_ADMIN_PUBKEYS);
         return DEFAULT_ADMIN_PUBKEYS;
       }
 
@@ -52,19 +54,28 @@ export function useAdminList() {
           const validPubkeys = parsed.filter((p): p is string => typeof p === 'string' && /^[0-9a-f]{64}$/i.test(p));
           
           if (validPubkeys.length > 0) {
+            // Always persist the latest list (including revocations)
             setPersistedAdmins(validPubkeys);
+            return validPubkeys;
           }
-          
-          return validPubkeys;
         }
       } catch {
         // Invalid content, fall back to default
       }
 
+      setPersistedAdmins(DEFAULT_ADMIN_PUBKEYS);
       return DEFAULT_ADMIN_PUBKEYS;
     },
-    staleTime: 60_000,
+    staleTime: 15_000, // 15s — keep revocation window tight
     retry: 2,
-    initialData: persistedAdmins,
+    placeholderData: persistedAdmins,
   });
+
+  return {
+    ...query,
+    // After a successful fetch, use the relay data.
+    // On error, fall back to DEFAULT (not the stale cache) to prevent
+    // a revoked admin from retaining access when relays are unreachable.
+    data: query.data ?? DEFAULT_ADMIN_PUBKEYS,
+  };
 }
