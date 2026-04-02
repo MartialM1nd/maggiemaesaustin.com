@@ -543,6 +543,78 @@ interface ManageEventsProps {
   onEditEvent: (event: MaggieEvent) => void;
 }
 
+interface EventListItemProps {
+  event: MaggieEvent;
+  isEventOwner: boolean;
+  onEditEvent: (event: MaggieEvent) => void;
+  onDelete: (event: MaggieEvent) => void;
+  deletingId: string | null;
+}
+
+function EventListItem({ event, isEventOwner, onEditEvent, onDelete, deletingId }: EventListItemProps) {
+  const author = useAuthor(event.raw.pubkey);
+  const meta = author.data?.metadata;
+  const authorName = meta?.name ?? genUserName(event.raw.pubkey);
+
+  return (
+    <div className="flex items-start justify-between gap-4 p-4 bg-background border border-border rounded-lg">
+      <div className="flex-1 min-w-0">
+        <p className="font-serif font-bold text-foreground truncate">{event.title}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <Avatar className="w-5 h-5">
+            <AvatarImage src={meta?.picture} alt={authorName} />
+            <AvatarFallback className="text-[8px] bg-primary/20">
+              {authorName.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-xs text-muted-foreground font-mono cursor-help">
+                {event.raw.pubkey.slice(0, 8)}...
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">{event.raw.pubkey}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <p className="text-xs text-muted-foreground font-display tracking-wide mt-0.5">
+          {formatEventDate(event.start, event.timezone)} · {formatEventTime(event.start, event.timezone)}
+          {event.stage && ` · ${event.stage}`}
+        </p>
+        {event.price && (
+          <p className="text-xs text-primary font-display mt-0.5">{event.price}</p>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        {isEventOwner && (
+          <button
+            onClick={() => onEditEvent(event)}
+            className="flex-shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors font-display tracking-wider"
+          >
+            <Pencil size={12} />
+            Edit
+          </button>
+        )}
+        {isEventOwner && (
+          <button
+            onClick={() => onDelete(event)}
+            disabled={deletingId === event.id}
+            className="flex-shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors font-display tracking-wider disabled:opacity-50"
+          >
+            {deletingId === event.id ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Trash2 size={12} />
+            )}
+            Delete
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ManageEvents({ onEditEvent }: ManageEventsProps) {
   const { data: events, isLoading } = useMaggieEvents();
   const { mutateAsync: createEvent } = useNostrPublish();
@@ -591,72 +663,16 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
 
   return (
     <div className="space-y-3 max-w-2xl">
-      {events.map((event) => {
-        const isEventOwner = currentUserPubkey === event.raw.pubkey.toLowerCase();
-        const author = useAuthor(event.raw.pubkey);
-        const meta = author.data?.metadata;
-        const authorName = meta?.name ?? genUserName(event.raw.pubkey);
-        return (
-        <div
+      {events.map((event) => (
+        <EventListItem
           key={event.id}
-          className="flex items-start justify-between gap-4 p-4 bg-background border border-border rounded-lg"
-        >
-          <div className="flex-1 min-w-0">
-            <p className="font-serif font-bold text-foreground truncate">{event.title}</p>
-            <div className="flex items-center gap-2 mt-1">
-              <Avatar className="w-5 h-5">
-                <AvatarImage src={meta?.picture} alt={authorName} />
-                <AvatarFallback className="text-[8px] bg-primary/20">
-                  {authorName.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-xs text-muted-foreground font-mono cursor-help">
-                    {event.raw.pubkey.slice(0, 8)}...
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs">{event.raw.pubkey}</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <p className="text-xs text-muted-foreground font-display tracking-wide mt-0.5">
-              {formatEventDate(event.start, event.timezone)} · {formatEventTime(event.start, event.timezone)}
-              {event.stage && ` · ${event.stage}`}
-            </p>
-            {event.price && (
-              <p className="text-xs text-primary font-display mt-0.5">{event.price}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {isEventOwner && (
-            <button
-              onClick={() => onEditEvent(event)}
-              className="flex-shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors font-display tracking-wider"
-            >
-              <Pencil size={12} />
-              Edit
-            </button>
-            )}
-            {isEventOwner && (
-            <button
-              onClick={() => handleDelete(event)}
-              disabled={deletingId === event.id}
-              className="flex-shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors font-display tracking-wider disabled:opacity-50"
-            >
-              {deletingId === event.id ? (
-                <Loader2 size={12} className="animate-spin" />
-              ) : (
-                <Trash2 size={12} />
-              )}
-              Delete
-            </button>
-            )}
-          </div>
-        </div>
-        );
-      })}
+          event={event}
+          isEventOwner={currentUserPubkey === event.raw.pubkey.toLowerCase()}
+          onEditEvent={onEditEvent}
+          onDelete={handleDelete}
+          deletingId={deletingId}
+        />
+      ))}
     </div>
   );
 }
