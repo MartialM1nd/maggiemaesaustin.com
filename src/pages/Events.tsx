@@ -208,14 +208,12 @@ export default function Events() {
                   For the full calendar and ticket links, visit the official Maggie Mae's website
                   or follow us on Instagram and Nostr.
                 </p>
-                <a
-                  href="https://www.maggiemaesaustin.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/calendar"
                   className="inline-flex items-center gap-2 px-6 py-2.5 border border-primary text-primary font-display text-xs tracking-widest uppercase rounded hover:bg-primary/10 transition-colors"
                 >
-                  Full Calendar <ExternalLink size={12} />
-                </a>
+                  Full Calendar
+                </Link>
               </div>
             </div>
           )}

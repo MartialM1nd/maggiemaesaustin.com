@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
-import { Clock, MapPin, CheckCircle2, Users, ArrowRight, Calendar } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, Users, ArrowRight, Calendar, Zap } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ZapButton } from '@/components/ZapButton';
 import { useEventRSVPs, filterRSVPs } from '@/hooks/useEventRSVPs';
 import { usePublishRSVP } from '@/hooks/usePublishMaggieEvent';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -159,17 +160,32 @@ export function EventCard({ event }: EventCardProps) {
 
         {/* Bottom row: price + RSVPs + RSVP button */}
         <div className="mt-3 pt-2 border-t border-border space-y-2">
-          <div className="flex items-center justify-between">
-            <span
-              className={cn(
-                'font-display text-sm font-bold',
-                event.price === 'Free' || event.price === 'free'
-                  ? 'text-green-500'
-                  : 'text-primary',
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span
+                className={cn(
+                  'font-display text-sm font-bold',
+                  event.price === 'Free' || event.price === 'free'
+                    ? 'text-green-500'
+                    : 'text-primary',
+                )}
+              >
+                {event.price}
+              </span>
+
+              {/* Zap the Artist button */}
+              {event.artistLightningAddress && (
+                <ZapButton
+                  target={event.raw}
+                  lightningAddress={event.artistLightningAddress}
+                  className="flex items-center gap-1 text-xs font-display tracking-wider px-2.5 py-1 bg-amber-500/10 text-amber-600 border border-amber-500/30 rounded hover:bg-amber-500/20 transition-colors"
+                  showCount={false}
+                >
+                  <Zap size={10} />
+                  <span>Zap Artist</span>
+                </ZapButton>
               )}
-            >
-              {event.price}
-            </span>
+            </div>
 
             {/* Details link */}
             <Link

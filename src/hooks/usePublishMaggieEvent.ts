@@ -16,6 +16,8 @@ export interface PublishEventInput {
   price: string;
   summary: string;
   imageUrl?: string;
+  /** Artist's lightning address for zaps (e.g. "artist@lightningaddress.com") */
+  artistLightningAddress?: string;
   /** If provided, the event will replace an existing event with this d-tag (NIP-52 edit) */
   existingDTag?: string;
 }
@@ -85,6 +87,10 @@ export function usePublishMaggieEvent() {
 
       if (input.imageUrl) {
         tags.push(['image', input.imageUrl]);
+      }
+
+      if (input.artistLightningAddress) {
+        tags.push(['lud16', input.artistLightningAddress]);
       }
 
       // Sign the event

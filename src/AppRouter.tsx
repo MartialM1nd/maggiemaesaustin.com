@@ -3,6 +3,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 
 import Index from "./pages/Index";
 import Events from "./pages/Events";
+import Calendar from "./pages/Calendar";
 import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 import { NIP19Page } from "./pages/NIP19Page";
@@ -15,6 +16,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/calendar" element={<Calendar />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin" element={<Admin />} />
         {/* NIP-19 route for npub1, note1, naddr1, nevent1, nprofile1 */}

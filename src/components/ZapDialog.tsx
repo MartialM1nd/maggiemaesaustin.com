@@ -39,6 +39,8 @@ interface ZapDialogProps {
   target: Event;
   children?: React.ReactNode;
   className?: string;
+  /** Override lightning address for zaps (e.g. artist lightning address) */
+  lightningAddress?: string;
 }
 
 const presetAmounts = [
@@ -235,13 +237,13 @@ const ZapContent = forwardRef<HTMLDivElement, ZapContentProps>(({
 ));
 ZapContent.displayName = 'ZapContent';
 
-export function ZapDialog({ target, children, className }: ZapDialogProps) {
+export function ZapDialog({ target, children, className, lightningAddress }: ZapDialogProps) {
   const [open, setOpen] = useState(false);
   const { user } = useCurrentUser();
   const { data: author } = useAuthor(target.pubkey);
   const { toast } = useToast();
   const { webln, activeNWC } = useWallet();
-  const { zap, isZapping, invoice, setInvoice } = useZaps(target, webln, activeNWC, () => setOpen(false));
+  const { zap, isZapping, invoice, setInvoice } = useZaps(target, webln, activeNWC, () => setOpen(false), lightningAddress);
   const [amount, setAmount] = useState<number | string>(100);
   const [comment, setComment] = useState<string>('');
   const [copied, setCopied] = useState(false);
@@ -348,7 +350,12 @@ export function ZapDialog({ target, children, className }: ZapDialogProps) {
     zap,
   };
 
-  if (!user || user.pubkey === target.pubkey || !author?.metadata?.lud06 && !author?.metadata?.lud16) {
+  if (!user) {
+    return null;
+  }
+
+  // If no explicit lightningAddress provided, require author's lud06/lud16
+  if (!lightningAddress && !author?.metadata?.lud16 && !author?.metadata?.lud06) {
     return null;
   }
 
@@ -414,11 +421,13 @@ export function ZapDialog({ target, children, className }: ZapDialogProps) {
             </DrawerClose>
 
             <DrawerTitle className="text-lg break-words pt-2">
-              {invoice ? 'Lightning Payment' : 'Send a Zap'}
+              {invoice ? 'Lightning Payment' : lightningAddress ? 'Zap the Artist' : 'Send a Zap'}
             </DrawerTitle>
             <DrawerDescription className="text-sm break-words text-center">
               {invoice ? (
                 'Pay with Bitcoin Lightning Network'
+              ) : lightningAddress ? (
+                'Support the artist performing at this show!'
               ) : (
                 'Zaps are small Bitcoin payments that support the creator of this item. If you enjoyed this, consider sending a zap!'
               )}
@@ -442,11 +451,13 @@ export function ZapDialog({ target, children, className }: ZapDialogProps) {
       <DialogContent className="sm:max-w-[425px] max-h-[95vh] overflow-hidden" data-testid="zap-modal">
         <DialogHeader>
           <DialogTitle className="text-lg break-words">
-            {invoice ? 'Lightning Payment' : 'Send a Zap'}
+            {invoice ? 'Lightning Payment' : lightningAddress ? 'Zap the Artist' : 'Send a Zap'}
           </DialogTitle>
           <DialogDescription className="text-sm text-center break-words">
             {invoice ? (
               'Pay with Bitcoin Lightning Network'
+            ) : lightningAddress ? (
+              'Support the artist performing at this show!'
             ) : (
               <>
                 Zaps are small Bitcoin payments that support the creator of this item. If you enjoyed this, consider sending a zap!

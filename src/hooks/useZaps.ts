@@ -16,7 +16,9 @@ export function useZaps(
   target: Event | Event[],
   webln: WebLNProvider | null,
   _nwcConnection: NWCConnection | null,
-  onZapSuccess?: () => void
+  onZapSuccess?: () => void,
+  /** Override lightning address for zaps (e.g. artist lightning address) */
+  _lightningAddressOverride?: string,
 ) {
   const { nostr } = useNostr();
   const { toast } = useToast();
@@ -159,33 +161,79 @@ export function useZaps(
     }
 
     try {
-      if (!author.data || !author.data?.metadata || !author.data?.event ) {
-        toast({
-          title: 'Author not found',
-          description: 'Could not find the author of this item.',
-          variant: 'destructive',
-        });
-        setIsZapping(false);
-        return;
+      let zapEndpoint: string | null = null;
+
+      if (_lightningAddressOverride) {
+        // When lightning address is provided, fetch zap endpoint from lnurlp
+        const [localPart, domain] = _lightningAddressOverride.split('@');
+        if (!domain) {
+          toast({
+            title: 'Invalid lightning address',
+            description: 'Lightning address must be in format user@domain.com',
+            variant: 'destructive',
+          });
+          setIsZapping(false);
+          return;
+        }
+
+        try {
+          // Fetch the lnurlp endpoint
+          const lnurlpResponse = await fetch(`https://${domain}/.well-known/lnurlp/${localPart}`);
+          if (!lnurlpResponse.ok) {
+            throw new Error('Lightning address not found');
+          }
+          const lnurlpData = await lnurlpResponse.json();
+          zapEndpoint = lnurlpData.callback;
+        } catch {
+          // Try alternate format without username in path
+          try {
+            const lnurlpResponse = await fetch(`https://${domain}/.well-known/lnurlp`);
+            if (!lnurlpResponse.ok) {
+              throw new Error('Lightning address not found');
+            }
+            const lnurlpData = await lnurlpResponse.json();
+            zapEndpoint = lnurlpData.callback;
+          } catch {
+            toast({
+              title: 'Lightning address not found',
+              description: `Could not find zap endpoint for ${_lightningAddressOverride}`,
+              variant: 'destructive',
+            });
+            setIsZapping(false);
+            return;
+          }
+        }
+      } else {
+        // Standard flow: use author's profile
+        if (!author.data || !author.data?.metadata || !author.data?.event) {
+          toast({
+            title: 'Author not found',
+            description: 'Could not find the author of this item.',
+            variant: 'destructive',
+          });
+          setIsZapping(false);
+          return;
+        }
+
+        const { lud06, lud16 } = author.data.metadata;
+        if (!lud06 && !lud16) {
+          toast({
+            title: 'Lightning address not found',
+            description: 'The author does not have a lightning address configured.',
+            variant: 'destructive',
+          });
+          setIsZapping(false);
+          return;
+        }
+
+        // Get zap endpoint using the old reliable method
+        zapEndpoint = await nip57.getZapEndpoint(author.data.event);
       }
 
-      const { lud06, lud16 } = author.data.metadata;
-      if (!lud06 && !lud16) {
-        toast({
-          title: 'Lightning address not found',
-          description: 'The author does not have a lightning address configured.',
-          variant: 'destructive',
-        });
-        setIsZapping(false);
-        return;
-      }
-
-      // Get zap endpoint using the old reliable method
-      const zapEndpoint = await nip57.getZapEndpoint(author.data.event);
       if (!zapEndpoint) {
         toast({
           title: 'Zap endpoint not found',
-          description: 'Could not find a zap endpoint for the author.',
+          description: 'Could not find a zap endpoint.',
           variant: 'destructive',
         });
         setIsZapping(false);
@@ -193,21 +241,29 @@ export function useZaps(
       }
 
       // Create zap request - use appropriate event format based on kind
-      // For addressable events (30000-39999), pass the object to get 'a' tag
-      // For all other events, pass the ID string to get 'e' tag
-      const event = (actualTarget.kind >= 30000 && actualTarget.kind < 40000)
-        ? actualTarget
-        : actualTarget.id;
-
+      // For addressable events (30000-39999), use EventZap format (pass full event)
+      // For all other events, use ProfileZap format (pass event ID string)
       const zapAmount = amount * 1000; // convert to millisats
+      const relays = config.relayMetadata.relays.map(r => r.url);
 
-      const zapRequest = nip57.makeZapRequest({
-        profile: actualTarget.pubkey,
-        event: event,
-        amount: zapAmount,
-        relays: config.relayMetadata.relays.map(r => r.url),
-        comment
-      });
+      let zapRequest;
+      if (actualTarget.kind >= 30000 && actualTarget.kind < 40000) {
+        // EventZap format for addressable events
+        zapRequest = nip57.makeZapRequest({
+          event: actualTarget as NostrEvent,
+          amount: zapAmount,
+          relays,
+          comment
+        });
+      } else {
+        // ProfileZap format for regular events
+        zapRequest = nip57.makeZapRequest({
+          pubkey: actualTarget.pubkey,
+          amount: zapAmount,
+          relays,
+          comment
+        });
+      }
 
       // Sign the zap request (but don't publish to relays - only send to LNURL endpoint)
       if (!user.signer) {

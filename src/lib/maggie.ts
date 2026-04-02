@@ -30,6 +30,8 @@ export interface MaggieEvent {
   price: string;
   /** Summary / short description */
   summary: string;
+  /** Artist's lightning address for zaps (NIP-57 lud16 tag) */
+  artistLightningAddress?: string;
 }
 
 /** Parse a raw NIP-52 kind:31923 event into a typed MaggieEvent. Returns null if invalid. */
@@ -66,6 +68,7 @@ export function parseMaggieEvent(event: NostrEvent): MaggieEvent | null {
     stage: tag('stage') ?? '',
     price: tag('price') ?? 'Free',
     summary: tag('summary') ?? '',
+    artistLightningAddress: tag('lud16'),
   };
 }
 

@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MessageSquare, ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ZapButton } from '@/components/ZapButton';
+import { MessageSquare, ChevronDown, ChevronRight, MoreHorizontal, Zap } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { genUserName } from '@/lib/genUserName';
 
@@ -83,6 +84,15 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
                   <MessageSquare className="h-3 w-3 mr-1" />
                   Reply
                 </Button>
+                
+                {/* Zap the comment author */}
+                <ZapButton
+                  target={comment}
+                  className="h-8 px-2 text-xs text-muted-foreground hover:text-amber-500"
+                >
+                  <Zap className="h-3 w-3 mr-1" />
+                  <span>Zap</span>
+                </ZapButton>
                 
                 {hasReplies && (
                   <Collapsible open={showReplies} onOpenChange={setShowReplies}>

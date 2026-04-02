@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, CheckCircle2, Users, Calendar } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, CheckCircle2, Users, Calendar, Zap } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ZapButton } from '@/components/ZapButton';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { useEventRSVPs, filterRSVPs } from '@/hooks/useEventRSVPs';
 import { usePublishRSVP } from '@/hooks/usePublishMaggieEvent';
@@ -150,6 +151,39 @@ export function EventDetail({ event }: EventDetailProps) {
           {event.description || event.summary}
         </div>
       )}
+
+      {/* Zap section */}
+      <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+        <h2 className="font-display text-xs tracking-widest uppercase text-muted-foreground">Support</h2>
+        <div className="flex flex-wrap gap-3">
+          {/* Zap the Artist */}
+          {event.artistLightningAddress && (
+            <ZapButton
+              target={event.raw}
+              lightningAddress={event.artistLightningAddress}
+              className="flex items-center gap-2 text-sm font-display tracking-wider px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+              showCount={false}
+            >
+              <Zap size={14} />
+              <span>Zap the Artist</span>
+            </ZapButton>
+          )}
+          {/* Zap the Venue */}
+          <ZapButton
+            target={event.raw}
+            className="flex items-center gap-2 text-sm font-display tracking-wider px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/80 transition-colors"
+            showCount={false}
+          >
+            <Zap size={14} />
+            <span>Zap the Venue</span>
+          </ZapButton>
+        </div>
+        <p className="text-xs text-muted-foreground font-serif">
+          {event.artistLightningAddress
+            ? 'Send a lightning zap to support the artist or the venue.'
+            : 'Send a lightning zap to support the venue.'}
+        </p>
+      </div>
 
       {/* RSVP section */}
       <div className="rounded-lg border border-border bg-card p-5 space-y-4">

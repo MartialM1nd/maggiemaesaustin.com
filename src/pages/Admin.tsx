@@ -71,20 +71,22 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
         stage: evt.stage || MAGGIE_MAES_STAGES[0] as string,
         price: evt.price,
         imageUrl: evt.image || '',
+        artistLightningAddress: evt.artistLightningAddress || '',
       };
     }
-    return {
-      title: '',
-      summary: '',
-      description: '',
-      startDate: '',
-      startTime: '',
-      endTime: '',
-      location: '323 E. 6th Street, Austin TX 78701',
-      stage: MAGGIE_MAES_STAGES[0] as string,
-      price: 'Free',
-      imageUrl: '',
-    };
+      return {
+        title: '',
+        summary: '',
+        description: '',
+        startDate: '',
+        startTime: '',
+        endTime: '',
+        location: '323 E. 6th Street, Austin TX 78701',
+        stage: MAGGIE_MAES_STAGES[0] as string,
+        price: 'Free',
+        imageUrl: '',
+        artistLightningAddress: '',
+      };
   };
 
   const [form, setForm] = useState(getInitialForm);
@@ -250,6 +252,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
         stage: form.stage,
         price: form.price,
         imageUrl: form.imageUrl || undefined,
+        artistLightningAddress: form.artistLightningAddress || undefined,
         existingDTag: isEditing ? editingEvent.dTag : undefined,
       },
       {
@@ -271,6 +274,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
               stage: MAGGIE_MAES_STAGES[0],
               price: 'Free',
               imageUrl: '',
+              artistLightningAddress: '',
             });
           }
           setTimeout(() => setPublished(false), 4000);
@@ -413,6 +417,17 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
             placeholder="Free / $10 / $15"
             value={form.price}
             onChange={(e) => set('price', e.target.value)}
+          />
+        </div>
+
+        {/* Artist Lightning Address */}
+        <div>
+          <label className={labelClass}>Artist Lightning Address</label>
+          <input
+            className={fieldClass}
+            placeholder="artist@lightning.address"
+            value={form.artistLightningAddress}
+            onChange={(e) => set('artistLightningAddress', e.target.value)}
           />
         </div>
 
