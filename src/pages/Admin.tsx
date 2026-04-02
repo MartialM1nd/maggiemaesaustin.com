@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle, RotateCcw, Save, Pencil } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuthor } from '@/hooks/useAuthor';
+import { genUserName } from '@/lib/genUserName';
 import { nip19 } from 'nostr-tools';
 import { Layout } from '@/components/Layout';
 import { LoginArea } from '@/components/auth/LoginArea';
@@ -589,6 +593,9 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
     <div className="space-y-3 max-w-2xl">
       {events.map((event) => {
         const isEventOwner = currentUserPubkey === event.raw.pubkey.toLowerCase();
+        const author = useAuthor(event.raw.pubkey);
+        const meta = author.data?.metadata;
+        const authorName = meta?.name ?? genUserName(event.raw.pubkey);
         return (
         <div
           key={event.id}
@@ -596,6 +603,24 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
         >
           <div className="flex-1 min-w-0">
             <p className="font-serif font-bold text-foreground truncate">{event.title}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <Avatar className="w-5 h-5">
+                <AvatarImage src={meta?.picture} alt={authorName} />
+                <AvatarFallback className="text-[8px] bg-primary/20">
+                  {authorName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-xs text-muted-foreground font-mono cursor-help">
+                    {event.raw.pubkey.slice(0, 8)}...
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">{event.raw.pubkey}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <p className="text-xs text-muted-foreground font-display tracking-wide mt-0.5">
               {formatEventDate(event.start, event.timezone)} · {formatEventTime(event.start, event.timezone)}
               {event.stage && ` · ${event.stage}`}
