@@ -21,7 +21,10 @@ export function useAdminConfig() {
 
   const isOwner = user?.pubkey === MAGGIE_MAES_PUBKEY;
 
-  const isAdmin = (pubkey: string) => adminPubkeys.includes(pubkey);
+  const isAdmin = (pubkey: string) => {
+    const normalized = pubkey.toLowerCase();
+    return adminPubkeys.some((p) => p.toLowerCase() === normalized);
+  };
 
   return {
     adminPubkeys,
