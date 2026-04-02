@@ -26,7 +26,7 @@ export function useAdminList() {
     DEFAULT_ADMIN_PUBKEYS,
   );
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['admin-list', MAGGIE_MAES_PUBKEY],
     queryFn: async ({ signal }) => {
       const events = await nostr.query(
@@ -65,6 +65,13 @@ export function useAdminList() {
     },
     staleTime: 60_000,
     retry: 2,
-    initialData: persistedAdmins,
+    placeholderData: persistedAdmins,
   });
+
+  return {
+    ...query,
+    // With placeholderData, isLoading is true until the first real fetch completes.
+    // Once resolved, data comes from the relay (not the stale cache).
+    data: query.data ?? persistedAdmins,
+  };
 }

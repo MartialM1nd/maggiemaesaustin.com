@@ -44,13 +44,13 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
       reqRouter(filters: NostrFilter[]) {
         const routes = new Map<string, NostrFilter[]>();
 
-        // Check if this is a bar event query (kind:31923)
-        const isBarEventQuery = filters.some((f) =>
-          f.kinds?.includes(31923),
+        // Check if this is a bar-related query (kind:31923 events or kind:30078 admin list)
+        const isBarQuery = filters.some((f) =>
+          f.kinds?.includes(31923) || f.kinds?.includes(30078),
         );
 
-        if (isBarEventQuery) {
-          // Route bar event queries ONLY to bar relays
+        if (isBarQuery) {
+          // Route bar-related queries ONLY to bar relays
           for (const url of barRelaysRef.current) {
             routes.set(url, filters);
           }
@@ -68,8 +68,8 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
         return routes;
       },
       eventRouter(event: NostrEvent) {
-        if (event.kind === 31923) {
-          // Bar calendar events publish to bar relays
+        if (event.kind === 31923 || event.kind === 30078) {
+          // Bar calendar events and admin list publish to bar relays
           return barRelaysRef.current;
         }
 
