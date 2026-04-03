@@ -1,3 +1,42 @@
+const globImages = import.meta.glob('/public/images/*.webp', { eager: true, query: '?url', import: 'default' });
+
+const IMAGE_SIZES = [400, 800, 1200, 1600] as const;
+
+function buildImageMap() {
+  const map: Record<string, string | undefined> = {};
+  
+  for (const [path, url] of Object.entries(globImages)) {
+    const fileName = path.split('/').pop()?.replace('.webp', '');
+    if (fileName) {
+      map[fileName] = url as string;
+    }
+  }
+  
+  return map;
+}
+
+const imageMap = buildImageMap();
+
+function generateSrcset(baseName: string): string | undefined {
+  const srcset = IMAGE_SIZES
+    .map(size => {
+      const key = `${baseName}-${size}w`;
+      const url = imageMap[key];
+      return url ? `${url} ${size}w` : null;
+    })
+    .filter(Boolean);
+  
+  return srcset.length > 0 ? srcset.join(', ') : undefined;
+}
+
+function getSrc(baseName: string): string | undefined {
+  return imageMap[`${baseName}-800w`] || imageMap[baseName];
+}
+
+export function getImagePath(baseName: string): string | undefined {
+  return imageMap[baseName];
+}
+
 interface ResponsiveImageProps {
   baseName: string;
   alt: string;
@@ -5,18 +44,6 @@ interface ResponsiveImageProps {
   sizes?: string;
   loading?: 'lazy' | 'eager';
   style?: React.CSSProperties;
-}
-
-const IMAGE_SIZES = [400, 800, 1200, 1600] as const;
-
-function generateSrcset(baseName: string): string {
-  return IMAGE_SIZES
-    .map(size => `/images/${baseName}-${size}w.webp ${size}w`)
-    .join(', ');
-}
-
-function getSrc(baseName: string): string {
-  return `/images/${baseName}-800w.webp`;
 }
 
 export function ResponsiveImage({
@@ -27,10 +54,18 @@ export function ResponsiveImage({
   loading = 'lazy',
   style,
 }: ResponsiveImageProps) {
+  const src = getSrc(baseName);
+  const srcSet = generateSrcset(baseName);
+
+  if (!src) {
+    console.warn(`ResponsiveImage: No images found for "${baseName}"`);
+    return null;
+  }
+
   return (
     <img
-      src={getSrc(baseName)}
-      srcSet={generateSrcset(baseName)}
+      src={src}
+      srcSet={srcSet}
       sizes={sizes}
       alt={alt}
       className={className}
@@ -38,8 +73,4 @@ export function ResponsiveImage({
       style={style}
     />
   );
-}
-
-export function getImagePath(baseName: string): string {
-  return `/images/${baseName}.webp`;
 }
