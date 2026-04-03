@@ -196,7 +196,7 @@ export default function Contact() {
               <div className="bg-card border border-border rounded-lg p-6">
                 <h2 className="font-serif text-xl font-bold text-foreground mb-3">Private Events</h2>
                 <p className="text-muted-foreground font-serif leading-relaxed mb-5">
-                  With 11,000 sq ft and five distinct spaces — Rooftop Patio, Disco Room, Piano Room, Gibson Room, and The Pub — Maggie Mae's is the perfect venue for corporate events, private parties, and band showcases. We accommodate up to 1,063 guests.
+                  With 11,000 sq ft and five distinct spaces — Rooftop Patio, Disco Room, Piano Room, Gibson Room, and The Pub — Maggie Mae's is the perfect venue for corporate events, private parties, and band showcases. We accommodate up to 987 guests.
                 </p>
                 <ul className="space-y-2 mb-5">
                   {[
