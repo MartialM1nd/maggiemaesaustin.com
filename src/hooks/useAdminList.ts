@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { MAGGIE_MAES_PUBKEY, ADMIN_LIST_DTAG, DEFAULT_ADMIN_PUBKEYS, ADMIN_PUBKEYS_STORAGE_KEY } from '@/lib/config';
@@ -19,7 +19,6 @@ import { MAGGIE_MAES_PUBKEY, ADMIN_LIST_DTAG, DEFAULT_ADMIN_PUBKEYS, ADMIN_PUBKE
  */
 export function useAdminList() {
   const { nostr } = useNostr();
-  const queryClient = useQueryClient();
 
   const [persistedAdmins, setPersistedAdmins] = useLocalStorage<string[]>(
     ADMIN_PUBKEYS_STORAGE_KEY,

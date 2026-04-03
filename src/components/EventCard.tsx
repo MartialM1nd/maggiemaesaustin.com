@@ -10,6 +10,7 @@ import { usePublishRSVP } from '@/hooks/usePublishMaggieEvent';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
+import { isValidImageUrl } from '@/lib/validation';
 import {
   formatEventDay,
   formatEventMonth,
@@ -39,7 +40,7 @@ function RSVPAvatar({ pubkey }: { pubkey: string }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <Avatar className="w-7 h-7 border-2 border-background -ml-2 first:ml-0 hover:z-10 relative transition-transform hover:scale-110">
-          <AvatarImage src={meta?.picture} alt={name} />
+          <AvatarImage src={isValidImageUrl(meta?.picture || '') ? meta?.picture : undefined} alt={name} />
           <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
             {name.slice(0, 2).toUpperCase()}
           </AvatarFallback>
@@ -98,7 +99,7 @@ export function EventCard({ event }: EventCardProps) {
       </div>
 
       {/* Image */}
-      {event.image && (
+      {event.image && isValidImageUrl(event.image) && (
         <div className="flex-none w-28 md:w-36 overflow-hidden">
           <img
             src={event.image}

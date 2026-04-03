@@ -1,5 +1,13 @@
 import type { NostrEvent } from '@nostrify/nostrify';
 import type { MaggieStage } from './config';
+import { isValidTimestamp } from './validation';
+
+/**
+ * Timestamp bounds for NIP-52 calendar events.
+ * Allows events from April 2, 2016 (10 years ago) to April 2, 2028 (2 years from now).
+ */
+const MIN_EVENT_TIMESTAMP = 1459555200; // April 2, 2016
+const MAX_EVENT_TIMESTAMP = 1827609600; // April 2, 2028
 
 /**
  * A parsed, typed representation of a NIP-52 kind:31923 calendar event
@@ -49,11 +57,11 @@ export function parseMaggieEvent(event: NostrEvent): MaggieEvent | null {
   if (!id || !title || !startRaw) return null;
 
   const start = parseInt(startRaw, 10);
-  if (isNaN(start)) return null;
+  if (isNaN(start) || !isValidTimestamp(start, MIN_EVENT_TIMESTAMP, MAX_EVENT_TIMESTAMP)) return null;
 
   const endRaw = tag('end');
   const end = endRaw ? parseInt(endRaw, 10) : undefined;
-  if (end !== undefined && isNaN(end)) return null;
+  if (end !== undefined && (isNaN(end) || end < start)) return null;
 
   return {
     raw: event,

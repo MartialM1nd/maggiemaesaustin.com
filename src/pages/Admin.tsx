@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
+import { isValidImageUrl } from '@/lib/validation';
 import { nip19 } from 'nostr-tools';
 import { Layout } from '@/components/Layout';
 import { LoginArea } from '@/components/auth/LoginArea';
@@ -562,7 +563,7 @@ function EventListItem({ event, isEventOwner, onEditEvent, onDelete, deletingId 
         <p className="font-serif font-bold text-foreground truncate">{event.title}</p>
         <div className="flex items-center gap-2 mt-1">
           <Avatar className="w-5 h-5">
-            <AvatarImage src={meta?.picture} alt={authorName} />
+            <AvatarImage src={isValidImageUrl(meta?.picture || '') ? meta?.picture : undefined} alt={authorName} />
             <AvatarFallback className="text-[8px] bg-primary/20">
               {authorName.slice(0, 2).toUpperCase()}
             </AvatarFallback>
@@ -687,7 +688,7 @@ function BarRelaysTab() {
   const validateWss = (url: string) => {
     try {
       const u = new URL(url.trim());
-      return u.protocol === 'wss:' || u.protocol === 'ws:';
+      return u.protocol === 'wss:';
     } catch {
       return false;
     }
