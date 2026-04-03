@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle, RotateCcw, Save, Pencil } from 'lucide-react';
+import { Shield, PlusCircle, Radio, Calendar, Trash2, Loader2, CheckCircle2, Copy, UserPlus, UserMinus, AlertTriangle, RotateCcw, Save, Pencil, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthor } from '@/hooks/useAuthor';
@@ -17,6 +17,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAdminConfig, useTemplateList, useTemplateMutations, type EventTemplate } from '@/hooks/useAdminConfig';
 import { useAdminMutations } from '@/hooks/useAdminMutations';
 import { useBarRelays } from '@/hooks/useBarRelays';
+import { useBlossomServers } from '@/hooks/useBlossomServers';
+import { useUploadFile } from '@/hooks/useUploadFile';
 import { MAGGIE_MAES_PUBKEY, MAGGIE_MAES_STAGES, DEFAULT_ADMIN_PUBKEYS, DEFAULT_BAR_RELAYS } from '@/lib/config';
 import { formatEventDate, formatEventTime, type MaggieEvent } from '@/lib/maggie';
 import { useToast } from '@/hooks/useToast';
@@ -60,6 +62,34 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
   const isEditing = !!editingEvent;
   const { toast } = useToast();
   const { mutate: publishEvent, isPending } = usePublishMaggieEvent();
+  const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const tags = await uploadFile(file);
+      const urlTag = tags.find(([name]) => name === 'url');
+      if (urlTag && urlTag[1]) {
+        set('imageUrl', urlTag[1]);
+        setShowUrlInput(false);
+        toast({ title: 'Image uploaded', description: 'Image uploaded successfully.' });
+      }
+    } catch (err) {
+      toast({ 
+        title: 'Upload failed', 
+        description: err instanceof Error ? err.message : 'Failed to upload image', 
+        variant: 'destructive' 
+      });
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   // Initialize form with editing event data if provided
   const getInitialForm = () => {
@@ -470,20 +500,80 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
 
         {/* Image URL */}
         <div className="md:col-span-2">
-          <label className={labelClass}>Image URL</label>
-          <input
-            className={fieldClass}
-            placeholder="https://..."
-            value={form.imageUrl}
-            onChange={(e) => set('imageUrl', e.target.value)}
-          />
-          {form.imageUrl && (
-            <img
-              src={form.imageUrl}
-              alt="preview"
-              className="mt-2 h-24 rounded object-cover border border-border"
-              onError={(e) => (e.currentTarget.style.display = 'none')}
-            />
+          <label className={labelClass}>Event Image</label>
+          
+          {form.imageUrl ? (
+            <div className="relative mt-2">
+              <img
+                src={form.imageUrl}
+                alt="preview"
+                className="h-32 rounded object-cover border border-border"
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  set('imageUrl', '');
+                  setShowUrlInput(false);
+                }}
+                className="absolute top-2 right-2 p-1.5 bg-background/80 hover:bg-background rounded-full text-muted-foreground hover:text-destructive transition-colors"
+                title="Remove image"
+              >
+                <Trash2 size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowUrlInput(true)}
+                className="absolute bottom-2 right-2 px-2 py-1 bg-background/80 hover:bg-background rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Replace
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-border rounded-lg text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                >
+                  <Upload size={16} />
+                  <span className="text-sm font-display">Upload Image</span>
+                </button>
+                {showUrlInput && (
+                  <input
+                    className={fieldClass}
+                    placeholder="https://..."
+                    value={form.imageUrl}
+                    onChange={(e) => set('imageUrl', e.target.value)}
+                    autoFocus
+                  />
+                )}
+              </div>
+              {!showUrlInput && (
+                <button
+                  type="button"
+                  onClick={() => setShowUrlInput(true)}
+                  className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors font-display"
+                >
+                  or enter image URL manually
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+          )}
+          
+          {isUploading && (
+            <div className="mt-3 flex items-center gap-2">
+              <Loader2 size={14} className="animate-spin text-primary" />
+              <span className="text-xs text-muted-foreground font-display">Uploading to Blossom server...</span>
+            </div>
           )}
         </div>
       </div>
@@ -681,14 +771,26 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
 // ── Bar Relays Tab ────────────────────────────────────────────────────────────
 function BarRelaysTab() {
   const { barRelays, addRelay, removeRelay, resetToDefaults } = useBarRelays();
+  const { servers, addServer, removeServer, resetToDefaults: resetBlossomDefaults } = useBlossomServers();
   const { toast } = useToast();
   const [newUrl, setNewUrl] = useState('');
   const [urlError, setUrlError] = useState('');
+  const [newServer, setNewServer] = useState('');
+  const [serverError, setServerError] = useState('');
 
   const validateWss = (url: string) => {
     try {
       const u = new URL(url.trim());
       return u.protocol === 'wss:';
+    } catch {
+      return false;
+    }
+  };
+
+  const validateHttps = (url: string) => {
+    try {
+      const u = new URL(url.trim());
+      return u.protocol === 'https:' || u.protocol === 'http:';
     } catch {
       return false;
     }
@@ -722,6 +824,46 @@ function BarRelaysTab() {
   const handleReset = () => {
     resetToDefaults();
     toast({ title: 'Reset to defaults' });
+  };
+
+  const handleAddServer = () => {
+    setServerError('');
+    const trimmed = newServer.trim().replace(/\/$/, '');
+    if (!trimmed) return;
+    
+    let normalized = trimmed;
+    if (!normalized.startsWith('https://') && !normalized.startsWith('http://')) {
+      normalized = 'https://' + normalized;
+    }
+    
+    if (!validateHttps(normalized)) {
+      setServerError('Must be a valid https:// server URL.');
+      return;
+    }
+    
+    normalized = normalized.replace(/\/$/, '');
+    if (servers.includes(normalized)) {
+      setServerError('Server already in list.');
+      return;
+    }
+    
+    addServer(normalized);
+    setNewServer('');
+    toast({ title: 'Blossom server added', description: normalized });
+  };
+
+  const handleRemoveServer = (url: string) => {
+    if (servers.length <= 1) {
+      toast({ title: 'Cannot remove', description: 'At least one server must remain.', variant: 'destructive' });
+      return;
+    }
+    removeServer(url);
+    toast({ title: 'Blossom server removed' });
+  };
+
+  const handleResetBlossom = () => {
+    resetBlossomDefaults();
+    toast({ title: 'Blossom servers reset to defaults' });
   };
 
   const fieldClass = 'flex-1 bg-background border border-border rounded px-3 py-2 text-sm text-foreground font-mono focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground';
@@ -796,6 +938,75 @@ function BarRelaysTab() {
           )}
           <p className="text-xs text-muted-foreground font-serif">
             Stored in browser localStorage. Does not affect your personal Nostr relay list.
+          </p>
+        </div>
+      </div>
+
+      {/* Blossom Servers */}
+      <div className="bg-background border border-border rounded-lg p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Upload size={14} className="text-muted-foreground" />
+            <h3 className="font-display text-xs tracking-widest uppercase text-muted-foreground">
+              Blossom Servers (Media Upload)
+            </h3>
+          </div>
+          <button
+            onClick={handleResetBlossom}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors font-display tracking-wider"
+          >
+            <RotateCcw size={11} /> Reset to defaults
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {servers.map((url) => {
+            return (
+              <div key={url} className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-muted px-3 py-2 rounded font-mono text-foreground truncate">
+                  {url}
+                </code>
+                <button
+                  onClick={() => handleRemoveServer(url)}
+                  disabled={servers.length <= 1}
+                  className="text-muted-foreground hover:text-destructive transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Remove server"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Add server */}
+        <div className="space-y-2 pt-2 border-t border-border">
+          <p className="font-display text-xs tracking-widest uppercase text-muted-foreground">
+            Add Server
+          </p>
+          <div className="flex gap-2">
+            <input
+              className={fieldClass}
+              placeholder="https://blossom.example.com"
+              value={newServer}
+              onChange={(e) => { setNewServer(e.target.value); setServerError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddServer()}
+            />
+            <button
+              onClick={handleAddServer}
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground font-display text-xs tracking-widest uppercase rounded hover:bg-primary/80 transition-all flex-shrink-0"
+            >
+              <PlusCircle size={13} />
+              Add
+            </button>
+          </div>
+          {serverError && (
+            <p className="flex items-center gap-1.5 text-xs text-destructive font-serif">
+              <AlertTriangle size={11} /> {serverError}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground font-serif">
+            Files are uploaded to Blossom servers when publishing events. Uploads try servers in order, falling back on failure.
           </p>
         </div>
       </div>

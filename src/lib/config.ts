@@ -92,3 +92,16 @@ export const DEFAULT_BAR_RELAYS: string[] = [
 
 /** localStorage key for the runtime-configurable bar relay list. */
 export const BAR_RELAYS_STORAGE_KEY = 'maggie:barRelays';
+
+/**
+ * Default Blossom servers for media uploads.
+ * Files are uploaded to these servers using the Blossom protocol (NIP-96).
+ * Configurable at runtime via /admin Relays tab.
+ */
+export const DEFAULT_BLOSSOM_SERVERS = [
+  'https://blossom.ditto.pub/',
+  'https://blossom.primal.net/',
+];
+
+/** localStorage key for the runtime-configurable Blossom server list. */
+export const BLOSSOM_SERVERS_STORAGE_KEY = 'maggie:blossomServers';

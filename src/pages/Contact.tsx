@@ -152,7 +152,7 @@ export default function Contact() {
 
                   {/* Nostr */}
                   <a
-                    href="https://nostr.com"
+                    href="https://ditto.pub/maggiemaes@nostr.place"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-4 p-4 bg-background border border-border rounded-lg hover:border-primary/40 hover:bg-primary/5 transition-all group"
