@@ -197,8 +197,7 @@ export default function Events() {
             <div className="mt-12 text-center">
               <div className="inline-flex flex-col items-center gap-4 p-8 border border-dashed border-primary/30 rounded-lg">
                 <p className="font-serif text-muted-foreground text-sm max-w-sm">
-                  For the full calendar and ticket links, visit the official Maggie Mae's website
-                  or follow us on Instagram and Nostr.
+                  Looking for more? Check out the full calendar here.
                 </p>
                 <Link
                   to="/calendar"

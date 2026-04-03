@@ -83,9 +83,9 @@ const spaces = [
 
 const stats = [
   { icon: <Star className="w-6 h-6" />, value: '1978', label: 'Est.' },
-  { icon: <Music className="w-6 h-6" />, value: '5', label: 'Stages' },
+  { icon: <Music className="w-6 h-6" />, value: '2', label: 'Stages' },
   { icon: <Wine className="w-6 h-6" />, value: '5', label: 'Bars' },
-  { icon: <Users className="w-6 h-6" />, value: '1063', label: 'Capacity' },
+  { icon: <Users className="w-6 h-6" />, value: '987', label: 'Capacity' },
 ];
 
 export default function Index() {
