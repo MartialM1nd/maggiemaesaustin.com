@@ -1,4 +1,4 @@
-const globImages = import.meta.glob('/public/images/*.webp', { eager: true });
+const globImages = import.meta.glob('/src/assets/images/*.webp', { eager: true });
 
 const IMAGE_SIZES = [400, 800, 1200, 1600] as const;
 
