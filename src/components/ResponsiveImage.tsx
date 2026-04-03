@@ -1,14 +1,15 @@
-const globImages = import.meta.glob('/public/images/*.webp', { eager: true, query: '?url', import: 'default' });
+const globImages = import.meta.glob('/public/images/*.webp', { eager: true });
 
 const IMAGE_SIZES = [400, 800, 1200, 1600] as const;
 
 function buildImageMap() {
-  const map: Record<string, string | undefined> = {};
+  const map: Record<string, string> = {};
   
-  for (const [path, url] of Object.entries(globImages)) {
+  for (const [path, mod] of Object.entries(globImages)) {
     const fileName = path.split('/').pop()?.replace('.webp', '');
-    if (fileName) {
-      map[fileName] = url as string;
+    const module = mod as { default?: string } | undefined;
+    if (fileName && module?.default) {
+      map[fileName] = module.default;
     }
   }
   
