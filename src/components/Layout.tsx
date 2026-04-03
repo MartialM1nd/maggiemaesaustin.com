@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Music } from 'lucide-react';
-
-const LOGO_URL = 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cb1a3623533388f1d537a3_logo_color.png';
+import { ResponsiveImage } from '@/components/ResponsiveImage';
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -37,8 +36,8 @@ function Header() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex-shrink-0 group">
-            <img
-              src={LOGO_URL}
+            <ResponsiveImage
+              baseName="logo"
               alt="Maggie Mae's"
               className="h-12 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
@@ -122,8 +121,8 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
           {/* Brand */}
           <div className="flex flex-col items-start gap-4">
-            <img
-              src={LOGO_URL}
+            <ResponsiveImage
+              baseName="logo"
               alt="Maggie Mae's"
               className="h-12 w-auto object-contain"
             />

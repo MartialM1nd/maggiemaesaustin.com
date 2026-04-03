@@ -9,6 +9,7 @@ import { LoginArea } from '@/components/auth/LoginArea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { STAGE_COLORS } from '@/lib/config';
+import { ResponsiveImage } from '@/components/ResponsiveImage';
 
 function EventSkeleton() {
   return (
@@ -54,10 +55,12 @@ export default function Events() {
       {/* ── PAGE HERO ─────────────────────────────────────────── */}
       <section className="relative isolate pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img
-            src="https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd2976d193be8759f2b867_sixth3-min.jpg"
+          <ResponsiveImage
+            baseName="live-music-interior"
             alt=""
             className="w-full h-full object-cover"
+            sizes="100vw"
+            loading="eager"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-background/80 to-background" />
         </div>
@@ -214,10 +217,11 @@ export default function Events() {
       {/* ── PRIVATE EVENTS CTA ────────────────────────────────── */}
       <section className="py-20 bg-card relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10 opacity-10">
-          <img
-            src="https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93c9bfea9513f36ea83_100A0437-min.jpg"
+          <ResponsiveImage
+            baseName="bar-interior"
             alt=""
             className="w-full h-full object-cover"
+            sizes="100vw"
           />
         </div>
         <div className="container mx-auto px-4 md:px-8 text-center">

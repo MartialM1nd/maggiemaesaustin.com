@@ -3,32 +3,34 @@ import { Link } from 'react-router-dom';
 import { Music, Star, Users, Wine, ChevronDown } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 
-const LOGO_URL = 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cb1a3623533388f1d537a3_logo_color.png';
+import { ResponsiveImage, getImagePath } from '@/components/ResponsiveImage';
+
+const LOGO_URL = getImagePath('logo');
 
 // Gallery images from the original site
 const galleryImages = [
   {
-    src: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd2976992dcbdd6bdc0c5e_sixth6-min.jpg',
+    baseName: 'sixth-street-hero',
     alt: 'Maggie Mae\'s Sixth Street',
   },
   {
-    src: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd2976d193be8759f2b867_sixth3-min.jpg',
+    baseName: 'live-music-interior',
     alt: 'Live music at Maggie Mae\'s',
   },
   {
-    src: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93c9bfea9513f36ea83_100A0437-min.jpg',
+    baseName: 'bar-interior',
     alt: 'Maggie Mae\'s interior',
   },
   {
-    src: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd1f6d6555cf9454a763fb_upstairs11-min.jpg',
+    baseName: 'rooftop-patio',
     alt: 'Rooftop Patio upstairs',
   },
   {
-    src: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd297625d8ce977e89ad8f_sixth4-min.jpg',
+    baseName: 'sixth-street-night',
     alt: 'Sixth Street view',
   },
   {
-    src: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93d6b94c814ccf860c0_100A0520-min.jpg',
+    baseName: 'rooftop-balcony',
     alt: 'The rooftop balcony',
   },
 ];
@@ -40,7 +42,7 @@ const spaces = [
     capacity: 483,
     tvs: 6,
     description: 'A premier destination for music lovers. Boasting a large stage, spacious dance floor, and a magnificent balcony overlooking bustling Sixth Street — with state-of-the-art backline equipment for crystal-clear sound.',
-    image: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd1f6d6555cf9454a763fb_upstairs11-min.jpg',
+    imageBaseName: 'rooftop-patio',
     tag: 'Rooftop',
   },
   {
@@ -49,7 +51,7 @@ const spaces = [
     capacity: 250,
     tvs: 4,
     description: 'A vibrant space with a polished dance floor, disco ball, and high-energy atmosphere. Perfect for funk, disco, and dance parties.',
-    image: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93d9bfea9513f36eab5_100A0387-min.jpg',
+    imageBaseName: 'stage-performance',
     tag: 'Dance Floor',
   },
   {
@@ -58,7 +60,7 @@ const spaces = [
     capacity: 75,
     tvs: 2,
     description: 'An intimate space featuring a grand piano. Ideal for singer-songwriters, jazz ensembles, and acoustic performances.',
-    image: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93d9bfea9513f36eab5_100A0387-min.jpg',
+    imageBaseName: 'stage-performance',
     tag: 'Intimate',
   },
   {
@@ -67,7 +69,7 @@ const spaces = [
     capacity: 150,
     tvs: 3,
     description: 'A guitar-themed performance space featuring backline equipment and vintage amps. Named in tribute to the iconic Gibson guitar legacy.',
-    image: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93d9bfea9513f36eab5_100A0387-min.jpg',
+    imageBaseName: 'stage-performance',
     tag: 'Performance',
   },
   {
@@ -76,7 +78,7 @@ const spaces = [
     capacity: 105,
     tvs: 4,
     description: 'A destination for locals and visitors for nearly half a century. The original wooden bar top bears etchings from celebrities, bands, and local legends. Domestic and international pints, plus signature locally-crafted cocktails.',
-    image: 'https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93d56be00d2d52b2944_100A0465-min.jpg',
+    imageBaseName: 'pub-bar-counter',
     tag: 'Historic',
   },
 ];
@@ -101,10 +103,12 @@ export default function Index() {
       <section className="relative isolate min-h-screen flex flex-col items-center justify-center overflow-hidden">
         {/* Background image collage */}
         <div className="absolute inset-0 -z-10">
-          <img
-            src="https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd2976992dcbdd6bdc0c5e_sixth6-min.jpg"
+          <ResponsiveImage
+            baseName="sixth-street-hero"
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
+            sizes="100vw"
+            loading="eager"
           />
           {/* Multi-layer dark vignette for vintage mood */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-background" />
@@ -219,10 +223,11 @@ export default function Index() {
                   className={`overflow-hidden rounded ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}
                   style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
                 >
-                  <img
-                    src={img.src}
+                  <ResponsiveImage
+                    baseName={img.baseName}
                     alt={img.alt}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                    sizes={i === 0 ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 768px) 100vw, 33vw'}
                   />
                 </div>
               ))}
@@ -252,10 +257,11 @@ export default function Index() {
               >
                 {/* Image */}
                 <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={space.image}
+                  <ResponsiveImage
+                    baseName={space.imageBaseName}
                     alt={space.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    sizes="(max-width: 768px) 100vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
                   <span className="absolute top-3 left-3 px-2 py-0.5 bg-primary text-primary-foreground text-xs font-display tracking-wider uppercase rounded">
@@ -307,10 +313,11 @@ export default function Index() {
               className="flex-none w-64 md:w-80 aspect-video rounded overflow-hidden snap-start"
               style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
             >
-              <img
-                src={img.src}
+              <ResponsiveImage
+                baseName={img.baseName}
                 alt={img.alt}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 768px) 100vw, 33vw"
               />
             </div>
           ))}
@@ -320,10 +327,11 @@ export default function Index() {
       {/* ── CTA BANNER ────────────────────────────────────────── */}
       <section className="py-20 bg-card relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img
-            src="https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd1f6d6555cf9454a763fb_upstairs11-min.jpg"
+          <ResponsiveImage
+            baseName="rooftop-patio"
             alt=""
             className="w-full h-full object-cover opacity-20"
+            sizes="100vw"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-card via-card/70 to-card" />
         </div>

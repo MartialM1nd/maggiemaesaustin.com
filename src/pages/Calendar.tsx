@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MaggieEvent } from '@/lib/maggie';
+import { ResponsiveImage } from '@/components/ResponsiveImage';
 
 const calendarStageColors: Record<string, string> = {
   'The Pub': 'bg-primary',
@@ -73,8 +74,8 @@ export default function CalendarPage() {
     <Layout>
       <section className="relative isolate pt-32 pb-12 overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img
-            src="https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65cd2976d193be8759f2b867_sixth3-min.jpg"
+          <ResponsiveImage
+            baseName="sixth-street-hero"
             alt=""
             className="w-full h-full object-cover"
           />

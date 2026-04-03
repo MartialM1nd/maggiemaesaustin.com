@@ -1,6 +1,7 @@
 import { useSeoMeta } from '@unhead/react';
 import { MapPin, Clock, ExternalLink, Zap } from 'lucide-react';
 import { Layout } from '@/components/Layout';
+import { ResponsiveImage } from '@/components/ResponsiveImage';
 
 const hours = [
   { day: 'Monday', open: '7:00 PM', close: '2:00 AM' },
@@ -28,8 +29,8 @@ export default function Contact() {
       {/* ── PAGE HERO ─────────────────────────────────────────── */}
       <section className="relative isolate pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img
-            src="https://cdn.prod.website-files.com/65c1b14078b4951e080348fb/65ccf93c9bfea9513f36ea83_100A0437-min.jpg"
+          <ResponsiveImage
+            baseName="bar-interior"
             alt=""
             className="w-full h-full object-cover"
           />
