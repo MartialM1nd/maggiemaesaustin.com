@@ -63,6 +63,19 @@ export const MAGGIE_MAES_STAGES = ['The Pub', 'Disco Room', 'Gibson Room', 'Pian
 export type MaggieStage = (typeof MAGGIE_MAES_STAGES)[number];
 
 /**
+ * Stage color mapping for UI display.
+ * Maps stage names to Tailwind border/text color classes.
+ */
+export const STAGE_COLORS: Record<string, { border: string; text: string }> = {
+  'The Pub': { border: 'border-primary', text: 'text-primary' },
+  'Disco Room': { border: 'border-rose-500', text: 'text-rose-500' },
+  'Gibson Room': { border: 'border-amber-700', text: 'text-amber-700' },
+  'Piano Room': { border: 'border-emerald-500', text: 'text-emerald-500' },
+  'Rooftop Patio': { border: 'border-slate-400', text: 'text-slate-400' },
+  'Cypherpunk Lounge': { border: 'border-orange-600', text: 'text-orange-600' },
+};
+
+/**
  * Bar-specific relays — where Maggie Mae's events are published and read from.
  * These are completely separate from the logged-in user's personal relay list.
  *

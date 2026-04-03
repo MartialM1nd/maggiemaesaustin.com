@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MaggieEvent } from '@/lib/maggie';
 
-const stageColors: Record<string, string> = {
+const calendarStageColors: Record<string, string> = {
   'The Pub': 'bg-primary',
   'Disco Room': 'bg-rose-500',
   'Gibson Room': 'bg-amber-700',
@@ -23,7 +23,7 @@ const stageColors: Record<string, string> = {
 };
 
 function getStageColor(stage: string): string {
-  return stageColors[stage] || 'bg-primary';
+  return calendarStageColors[stage] || 'bg-primary';
 }
 
 export default function CalendarPage() {
@@ -99,7 +99,7 @@ export default function CalendarPage() {
             <span className="font-display text-muted-foreground text-xs tracking-widest uppercase">
               Filter:
             </span>
-            {Object.entries(stageColors).map(([stage, color]) => {
+            {Object.entries(calendarStageColors).map(([stage, color]) => {
               const isActive = selectedStage === stage;
               return (
                 <button
@@ -111,7 +111,7 @@ export default function CalendarPage() {
                       ? `${color} text-white border-transparent`
                       : `border-${color.replace('bg-', '')} text-${color.replace('bg-', '')} hover:opacity-80`
                   )}
-                  style={!isActive ? { borderColor: stageColors[stage].replace('bg-', ''), color: stageColors[stage].replace('bg-', '') } : undefined}
+                  style={!isActive ? { borderColor: calendarStageColors[stage].replace('bg-', ''), color: calendarStageColors[stage].replace('bg-', '') } : undefined}
                 >
                   <Music size={10} />
                   {stage}
@@ -243,7 +243,7 @@ export default function CalendarPage() {
                                     <Badge
                                       variant="secondary"
                                       className={cn('text-[10px] px-1.5 py-0', getStageColor(evt.stage), 'text-white')}
-                                      style={{ backgroundColor: stageColors[evt.stage]?.replace('bg-', '#').replace('700', 'b73') || '#888' }}
+                                      style={{ backgroundColor: calendarStageColors[evt.stage]?.replace('bg-', '#').replace('700', 'b73') || '#888' }}
                                     >
                                       {evt.stage}
                                     </Badge>

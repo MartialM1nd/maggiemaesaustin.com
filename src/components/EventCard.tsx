@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
 import { Clock, MapPin, CheckCircle2, Users, ArrowRight, Calendar, Zap } from 'lucide-react';
@@ -19,17 +19,8 @@ import {
   generateICS,
   type MaggieEvent,
 } from '@/lib/maggie';
-import { MAGGIE_MAES_PUBKEY } from '@/lib/config';
+import { MAGGIE_MAES_PUBKEY, STAGE_COLORS } from '@/lib/config';
 import { cn } from '@/lib/utils';
-
-const stageColors: Record<string, string> = {
-  'The Pub': 'border-primary text-primary',
-  'Disco Room': 'border-rose-500 text-rose-500',
-  'Gibson Room': 'border-amber-700 text-amber-700',
-  'Piano Room': 'border-emerald-500 text-emerald-500',
-  'Rooftop Patio': 'border-slate-400 text-slate-400',
-  'Cypherpunk Lounge': 'border-orange-600 text-orange-600',
-};
 
 function RSVPAvatar({ pubkey }: { pubkey: string }) {
   const author = useAuthor(pubkey);
@@ -57,18 +48,21 @@ interface EventCardProps {
   event: MaggieEvent;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export const EventCard = memo(function EventCard({ event }: EventCardProps) {
   const { user } = useCurrentUser();
   const { data: rsvps = [], isLoading: rsvpsLoading } = useEventRSVPs(event);
   const { mutate: publishRSVP, isPending: rsvpPending } = usePublishRSVP();
   const [justRsvpd, setJustRsvpd] = useState(false);
 
   const coord = eventCoordinate(event);
-  const accepted = filterRSVPs(rsvps, 'accepted');
-  const tentative = filterRSVPs(rsvps, 'tentative');
+  const accepted = useMemo(() => filterRSVPs(rsvps, 'accepted'), [rsvps]);
+  const tentative = useMemo(() => filterRSVPs(rsvps, 'tentative'), [rsvps]);
 
   // Find the current user's RSVP if they have one
-  const myRSVP = user ? rsvps.find((r) => r.pubkey === user.pubkey) : undefined;
+  const myRSVP = useMemo(() => 
+    user ? rsvps.find((r) => r.pubkey === user.pubkey) : undefined,
+    [user, rsvps]
+  );
 
   const handleRSVP = (status: 'accepted' | 'declined' | 'tentative') => {
     if (!user) return;
@@ -84,7 +78,7 @@ export function EventCard({ event }: EventCardProps) {
     );
   };
 
-  const stageClass = stageColors[event.stage] ?? 'border-primary text-primary';
+  const stageClass = STAGE_COLORS[event.stage] ?? { border: 'border-primary', text: 'text-primary' };
 
   return (
     <div className="group relative flex bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300">
@@ -118,7 +112,8 @@ export function EventCard({ event }: EventCardProps) {
               <span
                 className={cn(
                   'border rounded-full px-2 py-0.5 text-xs font-display tracking-wider flex-shrink-0',
-                  stageClass,
+                  stageClass.border,
+                  stageClass.text,
                 )}
               >
                 {event.stage}
@@ -273,4 +268,4 @@ export function EventCard({ event }: EventCardProps) {
       </div>
     </div>
   );
-}
+});
