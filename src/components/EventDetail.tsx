@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { nip19 } from 'nostr-tools';
 import { ArrowLeft, Clock, MapPin, CheckCircle2, Users, Calendar, Zap } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -19,16 +20,19 @@ function RSVPAvatar({ pubkey }: { pubkey: string }) {
   const author = useAuthor(pubkey);
   const meta = author.data?.metadata;
   const name = meta?.name ?? genUserName(pubkey);
+  const npub = nip19.npubEncode(pubkey);
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Avatar className="w-8 h-8 border-2 border-background -ml-2 first:ml-0 hover:z-10 relative transition-transform hover:scale-110">
-          <AvatarImage src={meta?.picture} alt={name} />
-          <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-            {name.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <Link to={`/${npub}`} className="hover:opacity-80 transition-opacity">
+          <Avatar className="w-8 h-8 border-2 border-background -ml-2 first:ml-0 hover:z-10 relative transition-transform hover:scale-110">
+            <AvatarImage src={meta?.picture} alt={name} />
+            <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+              {name.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
       </TooltipTrigger>
       <TooltipContent side="top">
         <p className="text-xs">{name}</p>
