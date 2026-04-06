@@ -60,7 +60,7 @@ const spaces = [
     capacity: 75,
     tvs: 2,
     description: 'An intimate space featuring a grand piano. Ideal for singer-songwriters, jazz ensembles, and acoustic performances.',
-    imageBaseName: 'stage-performance',
+    imageBaseName: 'piano-room-wide',
     tag: 'Intimate',
   },
   {
@@ -69,7 +69,7 @@ const spaces = [
     capacity: 150,
     tvs: 3,
     description: 'A guitar-themed performance space featuring backline equipment and vintage amps. Named in tribute to the iconic Gibson guitar legacy.',
-    imageBaseName: 'stage-performance',
+    imageBaseName: 'gibson-room-rear',
     tag: 'Performance',
   },
   {
@@ -78,7 +78,7 @@ const spaces = [
     capacity: 105,
     tvs: 4,
     description: 'A destination for locals and visitors for nearly half a century. The original wooden bar top bears etchings from celebrities, bands, and local legends. Domestic and international pints, plus signature locally-crafted cocktails.',
-    imageBaseName: 'pub-bar-counter',
+    imageBaseName: 'pub-front',
     tag: 'Historic',
   },
 ];
