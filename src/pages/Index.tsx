@@ -51,7 +51,7 @@ const spaces = [
     capacity: 250,
     tvs: 4,
     description: 'A vibrant space with a polished dance floor, disco ball, and high-energy atmosphere. Perfect for funk, disco, and dance parties.',
-    imageBaseName: 'stage-performance',
+    imageBaseName: 'disco-room-front',
     tag: 'Dance Floor',
   },
   {
