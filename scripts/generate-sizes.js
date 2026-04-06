@@ -28,20 +28,27 @@ async function resizeImage(baseName) {
     return;
   }
 
-  console.log(`Processing ${baseName}...`);
+  // Get original dimensions
+  const metadata = await sharp(inputPath).metadata();
+  const originalHeight = metadata.height;
+  const originalWidth = metadata.width;
+  const aspectRatio = originalHeight / originalWidth;
+
+  console.log(`Processing ${baseName} (${originalWidth}x${originalHeight})...`);
   
   for (const size of sizes) {
     const outputPath = path.join(imagesDir, `${baseName}-${size}w.webp`);
+    const calculatedHeight = Math.round(size * aspectRatio);
     
     await sharp(inputPath)
-      .resize(size, null, {
+      .resize(size, calculatedHeight, {
         fit: 'fill',
         kernel: sharp.kernel.lanczos3,
       })
       .webp({ quality: 80 })
       .toFile(outputPath);
     
-    console.log(`  Created ${baseName}-${size}w.webp`);
+    console.log(`  Created ${baseName}-${size}w.webp (${size}x${calculatedHeight})`);
   }
 }
 
