@@ -75,7 +75,7 @@ export default function CalendarPage() {
       <section className="relative isolate pt-32 pb-12 overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <ResponsiveImage
-            baseName="sixth-street-hero"
+            baseName="hero-austin"
             alt=""
             className="w-full h-full object-cover"
           />

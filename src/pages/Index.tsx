@@ -10,7 +10,7 @@ const LOGO_URL = getImagePath('logo');
 // Gallery images from the original site
 const galleryImages = [
   {
-    baseName: 'sixth-street-hero',
+    baseName: 'hero-austin',
     alt: 'Maggie Mae\'s Sixth Street',
   },
   {
@@ -104,7 +104,7 @@ export default function Index() {
         {/* Background image collage */}
         <div className="absolute inset-0 -z-10">
           <ResponsiveImage
-            baseName="sixth-street-hero"
+            baseName="hero-austin"
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
             sizes="100vw"
