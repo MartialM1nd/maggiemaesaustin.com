@@ -1,5 +1,6 @@
 import { nip19 } from 'nostr-tools';
 import { useParams } from 'react-router-dom';
+import { ProfilePage } from './ProfilePage';
 import { EventPage } from './EventPage';
 import NotFound from './NotFound';
 
@@ -22,8 +23,7 @@ export function NIP19Page() {
   switch (type) {
     case 'npub':
     case 'nprofile':
-      // AI agent should implement profile view here
-      return <div>Profile placeholder</div>;
+      return <ProfilePage pubkey={decoded.data.pubkey} />;
 
     case 'note':
       // AI agent should implement note view here
