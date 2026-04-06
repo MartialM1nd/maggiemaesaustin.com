@@ -3,38 +3,26 @@ import fs from 'fs';
 import path from 'path';
 
 const imagesDir = './src/assets/images';
-const sizes = [400, 800, 1200, 1600];
+const sizes = [400, 800, 1200, 1600, 2000];
 
 const newImages = [
-  'bldg-front',
-  'disco-room-front',
-  'disco-room-rear',
-  'gibson-room-bar',
-  'gibson-room-rear',
-  'gibson-room-stage',
-  'gibson-room-streetview',
-  'hero-austin',
-  'piano-room',
-  'piano-room-wide',
-  'pub-front',
-  'pub-rear',
+  'bldg-front-night',
 ];
 
 async function resizeImage(baseName) {
-  const inputPath = path.join(imagesDir, `${baseName}-2000w.webp`);
+  const inputPath = path.join(imagesDir, `${baseName}.jpg`);
   
   if (!fs.existsSync(inputPath)) {
-    console.log(`Skipping ${baseName}-2000w.webp (not found)`);
+    console.log(`Skipping ${baseName}.jpg (not found)`);
     return;
   }
 
-  // Get original dimensions
   const metadata = await sharp(inputPath).metadata();
   const originalHeight = metadata.height;
   const originalWidth = metadata.width;
   const aspectRatio = originalHeight / originalWidth;
 
-  console.log(`Processing ${baseName} (${originalWidth}x${originalHeight})...`);
+  console.log(`Processing ${baseName}.jpg (${originalWidth}x${originalHeight})...`);
   
   for (const size of sizes) {
     const outputPath = path.join(imagesDir, `${baseName}-${size}w.webp`);
