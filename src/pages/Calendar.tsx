@@ -107,7 +107,7 @@ export default function CalendarPage() {
                   key={stage}
                   onClick={() => setSelectedStage(isActive ? null : stage)}
                   className={cn(
-                    'flex items-center gap-1.5 border rounded-full px-3 py-0.5 text-xs font-display tracking-wider transition-all',
+                    'flex items-center gap-1.5 border rounded px-3 py-1 text-xs font-display tracking-wider transition-all',
                     isActive
                       ? `${color} text-white border-transparent`
                       : `border-${color.replace('bg-', '')} text-${color.replace('bg-', '')} hover:opacity-80`

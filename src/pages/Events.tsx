@@ -56,9 +56,9 @@ export default function Events() {
       <section className="relative isolate pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <ResponsiveImage
-            baseName="live-music-interior"
+            baseName="hero-austin"
             alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
             sizes="100vw"
             loading="eager"
           />
@@ -91,7 +91,7 @@ export default function Events() {
                 <button
                   key={stage}
                   onClick={() => setSelectedStage(isActive ? null : stage)}
-                  className={`flex items-center gap-1.5 border rounded-full px-3 py-0.5 text-xs font-display tracking-wider transition-all ${
+                  className={`flex items-center gap-1.5 border rounded px-3 py-1 text-xs font-display tracking-wider transition-all ${
                     isActive
                       ? `bg-${colors.border.replace('border-', '')} bg-${colors.text.replace('text-', '')} text-white border-transparent`
                       : `${colors.border} ${colors.text} hover:opacity-80 cursor-pointer`
@@ -218,9 +218,9 @@ export default function Events() {
       <section className="py-20 bg-card relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10 opacity-10">
           <ResponsiveImage
-            baseName="bar-interior"
+            baseName="hero-austin"
             alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-bottom"
             sizes="100vw"
           />
         </div>

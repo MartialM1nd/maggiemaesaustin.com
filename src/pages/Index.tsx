@@ -14,24 +14,16 @@ const galleryImages = [
     alt: 'Maggie Mae\'s Sixth Street',
   },
   {
-    baseName: 'live-music-interior',
-    alt: 'Live music at Maggie Mae\'s',
-  },
-  {
-    baseName: 'bar-interior',
-    alt: 'Maggie Mae\'s interior',
-  },
-  {
-    baseName: 'rooftop-patio',
-    alt: 'Rooftop Patio upstairs',
-  },
-  {
-    baseName: 'sixth-street-night',
-    alt: 'Sixth Street view',
+    baseName: 'bldg-front',
+    alt: 'Building front view',
   },
   {
     baseName: 'rooftop-balcony',
-    alt: 'The rooftop balcony',
+    alt: 'Rooftop balcony view',
+  },
+  {
+    baseName: 'gibson-room-rear',
+    alt: 'Gibson Room',
   },
 ];
 
@@ -56,7 +48,7 @@ const spaces = [
   },
   {
     name: 'Gibson Room',
-    sqft: '1,200',
+    sqft: '4,845',
     capacity: 150,
     tvs: 3,
     description: 'A guitar-themed performance space featuring backline equipment and vintage amps. Named in tribute to the iconic Gibson guitar legacy.',
@@ -74,7 +66,7 @@ const spaces = [
   },
   {
     name: 'Rooftop Patio',
-    sqft: '4,845',
+    sqft: '1,200',
     capacity: 483,
     tvs: 6,
     description: 'An open-air rooftop escape overlooking Sixth Street. Perfect for winding down after a show, enjoying a drink with friends, or taking in the Austin skyline. Features comfortable seating, string lights, and a relaxed atmosphere away from the music inside.',
@@ -216,18 +208,18 @@ export default function Index() {
             </div>
 
             {/* Image grid */}
-            <div className="grid grid-cols-2 gap-3 relative">
+            <div className="grid grid-cols-2 gap-3 relative max-w-2xl mx-auto">
               {galleryImages.slice(0, 4).map((img, i) => (
                 <div
                   key={i}
-                  className={`overflow-hidden rounded ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}
+                  className={`overflow-hidden rounded ${i === 0 || i === 3 ? 'col-span-2 aspect-video' : 'aspect-square'}`}
                   style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
                 >
                   <ResponsiveImage
                     baseName={img.baseName}
                     alt={img.alt}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
-                    sizes={i === 0 ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 768px) 100vw, 33vw'}
+                    sizes={i === 0 || i === 3 ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 768px) 100vw, 33vw'}
                   />
                 </div>
               ))}
@@ -306,7 +298,7 @@ export default function Index() {
             Nights to <span className="gold-text">Remember</span>
           </h2>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-3 px-4 md:px-8 snap-x snap-mandatory scrollbar-none">
+        <div className="flex gap-3 overflow-x-auto pb-3 px-4 md:px-8 snap-x snap-mandatory scrollbar-none justify-center">
           {galleryImages.map((img, i) => (
             <div
               key={i}
