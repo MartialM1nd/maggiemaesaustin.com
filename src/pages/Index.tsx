@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Link } from 'react-router-dom';
 import { Music, Star, Users, Wine, ChevronDown } from 'lucide-react';
 import { Layout } from '@/components/Layout';
-
+import { ImageModal } from '@/components/ImageModal';
 import { ResponsiveImage, getImagePath } from '@/components/ResponsiveImage';
 
 const LOGO_URL = getImagePath('logo');
@@ -22,7 +23,7 @@ const galleryImages = [
     alt: 'Rooftop balcony view',
   },
   {
-    baseName: 'gibson-room-rear',
+    baseName: 'gibson-room-bar',
     alt: 'Gibson Room',
   },
 ];
@@ -83,6 +84,8 @@ const stats = [
 ];
 
 export default function Index() {
+  const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
+
   useSeoMeta({
     title: "Maggie Mae's Bar — Live Music on Sixth Street, Austin TX",
     description:
@@ -209,20 +212,24 @@ export default function Index() {
 
             {/* Image grid */}
             <div className="grid grid-cols-2 gap-3 relative max-w-2xl mx-auto">
-              {galleryImages.slice(0, 4).map((img, i) => (
-                <div
-                  key={i}
-                  className={`overflow-hidden rounded ${i === 0 || i === 3 ? 'col-span-2 aspect-video' : 'aspect-square'}`}
-                  style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
-                >
-                  <ResponsiveImage
-                    baseName={img.baseName}
-                    alt={img.alt}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
-                    sizes={i === 0 || i === 3 ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 768px) 100vw, 33vw'}
-                  />
-                </div>
-              ))}
+              {galleryImages.slice(0, 4).map((img, i) => {
+                const imgPath = getImagePath(img.baseName);
+                return (
+                  <button
+                    key={i}
+                    className={`overflow-hidden rounded ${i === 0 || i === 3 ? 'col-span-2 aspect-video' : 'aspect-square'}`}
+                    style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
+                    onClick={() => imgPath && setSelectedImage({ src: imgPath, alt: img.alt })}
+                  >
+                    <ResponsiveImage
+                      baseName={img.baseName}
+                      alt={img.alt}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                      sizes={i === 0 || i === 3 ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 768px) 100vw, 33vw'}
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -299,20 +306,24 @@ export default function Index() {
           </h2>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-3 px-4 md:px-8 snap-x snap-mandatory scrollbar-none justify-center">
-          {galleryImages.map((img, i) => (
-            <div
-              key={i}
-              className="flex-none w-64 md:w-80 aspect-video rounded overflow-hidden snap-start"
-              style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
-            >
-              <ResponsiveImage
-                baseName={img.baseName}
-                alt={img.alt}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
-            </div>
-          ))}
+          {galleryImages.map((img, i) => {
+            const imgPath = getImagePath(img.baseName);
+            return (
+              <button
+                key={i}
+                className="flex-none w-64 md:w-80 aspect-video rounded overflow-hidden snap-start"
+                style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                onClick={() => imgPath && setSelectedImage({ src: imgPath, alt: img.alt })}
+              >
+                <ResponsiveImage
+                  baseName={img.baseName}
+                  alt={img.alt}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -351,6 +362,12 @@ export default function Index() {
           </div>
         </div>
       </section>
+      <ImageModal
+        src={selectedImage?.src ?? ''}
+        alt={selectedImage?.alt ?? ''}
+        isOpen={!!selectedImage}
+        onClose={() => setSelectedImage(null)}
+      />
     </Layout>
   );
 }

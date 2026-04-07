@@ -35,7 +35,23 @@ function getSrc(baseName: string): string | undefined {
 }
 
 export function getImagePath(baseName: string): string | undefined {
-  return imageMap[baseName];
+  // Try to find the base image (without size suffix), otherwise use largest size
+  if (imageMap[baseName]) {
+    return imageMap[baseName];
+  }
+  // Try 2000w as fallback
+  if (imageMap[`${baseName}-2000w`]) {
+    return imageMap[`${baseName}-2000w`];
+  }
+  // Try 1600w
+  if (imageMap[`${baseName}-1600w`]) {
+    return imageMap[`${baseName}-1600w`];
+  }
+  // Try 1200w
+  if (imageMap[`${baseName}-1200w`]) {
+    return imageMap[`${baseName}-1200w`];
+  }
+  return undefined;
 }
 
 interface ResponsiveImageProps {
