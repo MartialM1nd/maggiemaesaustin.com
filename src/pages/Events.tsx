@@ -81,7 +81,7 @@ export default function Events() {
       {/* ── STAGE LEGEND (CLICKABLE) ────────────────────────────── */}
       <section className="bg-card border-b border-border py-4">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start">
+          <div className="flex flex-wrap items-center gap-4 justify-center">
             <span className="font-display text-muted-foreground text-xs tracking-widest uppercase">
               Filter:
             </span>

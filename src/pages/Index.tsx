@@ -242,10 +242,10 @@ export default function Index() {
           <div className="text-center mb-16">
             <p className="font-display text-primary text-xs tracking-[0.3em] uppercase mb-3">The Venue</p>
             <h2 className="font-serif text-4xl md:text-5xl font-black text-foreground mb-4">
-              Three Floors of <span className="gold-text">Pure Austin</span>
+              Two Floors of <span className="gold-text">Pure Austin</span>
             </h2>
             <p className="text-muted-foreground font-serif max-w-xl mx-auto">
-              From the historic Pub downstairs to the rooftop Deck above Sixth Street — every corner of Maggie Mae's has a story.
+              From the historic Pub on the ground floor to the Rooftop Patio above — every corner of Maggie Mae's has a story.
             </p>
           </div>
 
