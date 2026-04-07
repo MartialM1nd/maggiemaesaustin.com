@@ -6,7 +6,7 @@ const imagesDir = './src/assets/images';
 const sizes = [400, 800, 1200, 1600, 2000];
 
 const newImages = [
-  'bldg-front-night',
+  'rooftop-patio-left',
 ];
 
 async function resizeImage(baseName) {

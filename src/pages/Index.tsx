@@ -37,13 +37,13 @@ const galleryImages = [
 
 const spaces = [
   {
-    name: 'Rooftop Patio',
-    sqft: '4,845',
-    capacity: 483,
-    tvs: 6,
-    description: 'A premier destination for music lovers. Boasting a large stage, spacious dance floor, and a magnificent balcony overlooking bustling Sixth Street — with state-of-the-art backline equipment for crystal-clear sound.',
-    imageBaseName: 'rooftop-patio',
-    tag: 'Rooftop',
+    name: 'The Pub',
+    sqft: '1,664',
+    capacity: 105,
+    tvs: 4,
+    description: 'A destination for locals and visitors for nearly half a century. The original wooden bar top bears etchings from celebrities, bands, and local legends. Domestic and international pints, plus signature locally-crafted cocktails.',
+    imageBaseName: 'pub-front',
+    tag: 'Historic',
   },
   {
     name: 'Disco Room',
@@ -55,15 +55,6 @@ const spaces = [
     tag: 'Dance Floor',
   },
   {
-    name: 'Piano Room',
-    sqft: '800',
-    capacity: 75,
-    tvs: 2,
-    description: 'An intimate space featuring a grand piano. Ideal for singer-songwriters, jazz ensembles, and acoustic performances.',
-    imageBaseName: 'piano-room-wide',
-    tag: 'Intimate',
-  },
-  {
     name: 'Gibson Room',
     sqft: '1,200',
     capacity: 150,
@@ -73,13 +64,22 @@ const spaces = [
     tag: 'Performance',
   },
   {
-    name: 'The Pub',
-    sqft: '1,664',
-    capacity: 105,
-    tvs: 4,
-    description: 'A destination for locals and visitors for nearly half a century. The original wooden bar top bears etchings from celebrities, bands, and local legends. Domestic and international pints, plus signature locally-crafted cocktails.',
-    imageBaseName: 'pub-front',
-    tag: 'Historic',
+    name: 'Piano Room',
+    sqft: '800',
+    capacity: 75,
+    tvs: 2,
+    description: 'An intimate space featuring a grand piano. Ideal for singer-songwriters, jazz ensembles, acoustic performances, and comedy shows. Perfect for a more laid-back night of live entertainment in a cozy setting.',
+    imageBaseName: 'piano-room-wide',
+    tag: 'Intimate',
+  },
+  {
+    name: 'Rooftop Patio',
+    sqft: '4,845',
+    capacity: 483,
+    tvs: 6,
+    description: 'An open-air rooftop escape overlooking Sixth Street. Perfect for winding down after a show, enjoying a drink with friends, or taking in the Austin skyline. Features comfortable seating, string lights, and a relaxed atmosphere away from the music inside.',
+    imageBaseName: 'rooftop-patio-left',
+    tag: 'Rooftop',
   },
 ];
 
@@ -104,7 +104,7 @@ export default function Index() {
         {/* Background image collage */}
         <div className="absolute inset-0 -z-10">
           <ResponsiveImage
-            baseName="hero-austin"
+            baseName="bldg-front-night"
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
             sizes="100vw"
@@ -135,7 +135,7 @@ export default function Index() {
             <span className="gold-text">Lives the Music</span>
           </h1>
 
-          <p className="text-foreground/70 text-lg md:text-xl max-w-xl mt-4 mb-10 font-serif leading-relaxed">
+          <p className="text-foreground/85 text-lg md:text-xl max-w-xl mt-4 mb-10 font-serif leading-relaxed">
             11,000 square feet of live music, cold drinks, and Sixth Street soul — since the year of the Ramones.
           </p>
 
