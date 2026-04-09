@@ -42,3 +42,39 @@ export function useMaggieEvents() {
     retry: 1,
   });
 }
+
+/**
+ * Query NIP-52 kind:31923 calendar events for a specific month range.
+ * Used by Calendar page to dynamically load events as user navigates months.
+ * 
+ * @param startDate - Start of month (Date object)
+ * @param endDate - End of month (Date object)
+ */
+export function useMaggieEventsForMonth(startDate: Date, endDate: Date) {
+  const { nostr } = useNostr();
+  const { adminPubkeys } = useAdminConfig();
+  const { barRelays } = useBarRelays();
+
+  const since = Math.floor(startDate.getTime() / 1000);
+  const until = Math.floor(endDate.getTime() / 1000);
+
+  return useQuery({
+    queryKey: ['maggie-events-month', since, until, adminPubkeys.join(','), barRelays.join(',')],
+    queryFn: async ({ signal }) => {
+      const events = await nostr.query(
+        [{ kinds: [31923], authors: adminPubkeys, since, until }],
+        { signal },
+      );
+
+      return events
+        .map(parseMaggieEvent)
+        .filter((e): e is MaggieEvent => e !== null)
+        .filter((e) =>
+          e.raw.tags.some(([name, val]) => name === 't' && val === MAGGIE_MAES_TAG),
+        )
+        .sort(sortByStart);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+  });
+}

@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Calendar as CalendarIcon, Music, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Music, ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { Layout } from '@/components/Layout';
 import { EventCard } from '@/components/EventCard';
-import { useMaggieEvents } from '@/hooks/useMaggieEvents';
+import { useMaggieEventsForMonth } from '@/hooks/useMaggieEvents';
 import { formatEventTime, sortByStart } from '@/lib/maggie';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,13 +33,16 @@ export default function CalendarPage() {
     description: "Full calendar of live music events at Maggie Mae's Bar on Sixth Street, Austin TX.",
   });
 
-  const { data: events } = useMaggieEvents();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+
+  const { data: events = [], isLoading } = useMaggieEventsForMonth(monthStart, monthEnd);
+
   const filteredEvents = useMemo(() => {
-    if (!events) return [];
     return selectedStage
       ? events.filter((e) => e.stage === selectedStage)
       : events;
@@ -56,8 +59,6 @@ export default function CalendarPage() {
     return map;
   }, [filteredEvents]);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart);
   const calendarEnd = endOfWeek(monthEnd);
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
@@ -171,102 +172,110 @@ export default function CalendarPage() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map((day) => {
-                  const dateKey = format(day, 'yyyy-MM-dd');
-                  const dayEvents = eventsByDate.get(dateKey) || [];
-                  const hasEvents = dayEvents.length > 0;
-                  const isCurrentMonth = isSameMonth(day, currentMonth);
-                  const isToday = isSameDay(day, today);
-                  const isSelected = selectedDate && isSameDay(day, selectedDate);
+              {isLoading && (
+                <div className="flex items-center justify-center min-h-[400px]">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              )}
 
-                  return (
-                    <Popover key={dateKey}>
-                      <PopoverTrigger asChild>
-                        <button
-                          onClick={() => setSelectedDate(day)}
-                          disabled={!isCurrentMonth}
-                          className={cn(
-                            'relative min-h-[80px] p-2 rounded-md transition-all flex flex-col items-center justify-start gap-1',
-                            isCurrentMonth ? 'hover:bg-accent/50 cursor-pointer' : 'opacity-30 cursor-default',
-                            isSelected && 'bg-primary/10 ring-2 ring-primary',
-                            isToday && !isSelected && 'bg-accent'
-                          )}
-                        >
-                          <span
+              {!isLoading && (
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map((day) => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    const dayEvents = eventsByDate.get(dateKey) || [];
+                    const hasEvents = dayEvents.length > 0;
+                    const isCurrentMonth = isSameMonth(day, currentMonth);
+                    const isToday = isSameDay(day, today);
+                    const isSelected = selectedDate && isSameDay(day, selectedDate);
+
+                    return (
+                      <Popover key={dateKey}>
+                        <PopoverTrigger asChild>
+                          <button
+                            onClick={() => setSelectedDate(day)}
+                            disabled={!isCurrentMonth}
                             className={cn(
-                              'text-sm font-medium',
-                              isToday ? 'text-primary font-bold' : 'text-foreground',
-                              !isCurrentMonth && 'text-muted-foreground'
+                              'relative min-h-[80px] p-2 rounded-md transition-all flex flex-col items-center justify-start gap-1',
+                              isCurrentMonth ? 'hover:bg-accent/50 cursor-pointer' : 'opacity-30 cursor-default',
+                              isSelected && 'bg-primary/10 ring-2 ring-primary',
+                              isToday && !isSelected && 'bg-accent'
                             )}
                           >
-                            {format(day, 'd')}
-                          </span>
-                          {hasEvents && isCurrentMonth && (
-                            <div className="flex flex-wrap gap-0.5 justify-center max-w-full px-0.5">
-                              {dayEvents.slice(0, 3).map((evt, idx) => (
-                                <div
-                                  key={idx}
-                                  className={cn('w-1.5 h-1.5 rounded-full', getStageColor(evt.stage))}
-                                  title={evt.title}
-                                />
-                              ))}
-                              {dayEvents.length > 3 && (
-                                <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 3}</span>
+                            <span
+                              className={cn(
+                                'text-sm font-medium',
+                                isToday ? 'text-primary font-bold' : 'text-foreground',
+                                !isCurrentMonth && 'text-muted-foreground'
                               )}
+                            >
+                              {format(day, 'd')}
+                            </span>
+                            {hasEvents && isCurrentMonth && (
+                              <div className="flex flex-wrap gap-0.5 justify-center max-w-full px-0.5">
+                                {dayEvents.slice(0, 3).map((evt, idx) => (
+                                  <div
+                                    key={idx}
+                                    className={cn('w-1.5 h-1.5 rounded-full', getStageColor(evt.stage))}
+                                    title={evt.title}
+                                  />
+                                ))}
+                                {dayEvents.length > 3 && (
+                                  <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 3}</span>
+                                )}
+                              </div>
+                            )}
+                          </button>
+                        </PopoverTrigger>
+                        {hasEvents && isCurrentMonth && (
+                          <PopoverContent
+                            align="start"
+                            className="w-72 p-0 max-h-80 overflow-hidden"
+                            sideOffset={5}
+                          >
+                            <div className="p-3 border-b bg-card">
+                              <p className="font-serif font-semibold text-sm">
+                                {format(day, 'EEEE, MMMM d')}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
+                              </p>
                             </div>
-                          )}
-                        </button>
-                      </PopoverTrigger>
-                      {hasEvents && isCurrentMonth && (
-                        <PopoverContent
-                          align="start"
-                          className="w-72 p-0 max-h-80 overflow-hidden"
-                          sideOffset={5}
-                        >
-                          <div className="p-3 border-b bg-card">
-                            <p className="font-serif font-semibold text-sm">
-                              {format(day, 'EEEE, MMMM d')}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                          <ScrollArea className="max-h-60">
-                            <div className="p-2 space-y-2">
-                              {dayEvents.map((evt) => (
-                                <div
-                                  key={evt.id}
-                                  className="p-2 rounded-md bg-background hover:bg-accent/50 transition-colors cursor-pointer"
-                                  onClick={() => setSelectedDate(day)}
-                                >
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Badge
-                                      variant="secondary"
-                                      className={cn('text-[10px] px-1.5 py-0', getStageColor(evt.stage), 'text-white')}
-                                      style={{ backgroundColor: calendarStageColors[evt.stage]?.replace('bg-', '#').replace('700', 'b73') || '#888' }}
-                                    >
-                                      {evt.stage}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground font-medium">
-                                      {evt.price}
-                                    </span>
+                            <ScrollArea className="max-h-60">
+                              <div className="p-2 space-y-2">
+                                {dayEvents.map((evt) => (
+                                  <div
+                                    key={evt.id}
+                                    className="p-2 rounded-md bg-background hover:bg-accent/50 transition-colors cursor-pointer"
+                                    onClick={() => setSelectedDate(day)}
+                                  >
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge
+                                        variant="secondary"
+                                        className={cn('text-[10px] px-1.5 py-0', getStageColor(evt.stage), 'text-white')}
+                                        style={{ backgroundColor: calendarStageColors[evt.stage]?.replace('bg-', '#').replace('700', 'b73') || '#888' }}
+                                      >
+                                        {evt.stage}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground font-medium">
+                                        {evt.price}
+                                      </span>
+                                    </div>
+                                    <p className="font-medium text-sm line-clamp-1">{evt.title}</p>
+                                    <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                      <Clock size={10} />
+                                      {formatEventTime(evt.start, evt.timezone)}
+                                    </div>
                                   </div>
-                                  <p className="font-medium text-sm line-clamp-1">{evt.title}</p>
-                                  <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                                    <Clock size={10} />
-                                    {formatEventTime(evt.start, evt.timezone)}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </PopoverContent>
-                      )}
-                    </Popover>
-                  );
-                })}
-              </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                          </PopoverContent>
+                        )}
+                      </Popover>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {selectedDate && (
