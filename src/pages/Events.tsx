@@ -163,12 +163,12 @@ export default function Events() {
                   </p>
                 </div>
                 <a
-                  href="https://www.maggiemaesaustin.com"
+                  href="https://ditto.pub/maggiemaes@nostr.place"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2 border border-primary text-primary font-display text-xs tracking-widest uppercase rounded hover:bg-primary/10 transition-colors"
                 >
-                  Official Site <ExternalLink size={11} />
+                  Follow on Nostr <ExternalLink size={11} />
                 </a>
               </div>
             </div>
