@@ -22,6 +22,8 @@ export interface PublishEventInput {
   existingDTag?: string;
   /** Recurrence type: weekly, biweekly, or monthly */
   recurring?: '' | 'weekly' | 'biweekly' | 'monthly';
+  /** Number of recurring events to create */
+  recurringAmount?: number;
 }
 
 /** Convert a datetime-local string to a unix timestamp (seconds). */
@@ -77,7 +79,10 @@ export function usePublishMaggieEvent() {
       };
       
       const baseInterval = isRecurring ? intervals[input.recurring as 'weekly' | 'biweekly' | 'monthly'] : 0;
-      const numEvents = isRecurring ? getRecurrenceCount(input.recurring as 'weekly' | 'biweekly' | 'monthly') : 1;
+      // Use provided amount, or default to max based on recurrence type
+      const maxForType = { weekly: 26, biweekly: 13, monthly: 6 };
+      const maxAmount = input.recurring ? maxForType[input.recurring as keyof typeof maxForType] : 26;
+      const numEvents = isRecurring ? (input.recurringAmount || maxAmount) : 1;
       const recurringUntil = isRecurring ? getRecurringUntil() : undefined;
 
       // Create multiple events if recurring

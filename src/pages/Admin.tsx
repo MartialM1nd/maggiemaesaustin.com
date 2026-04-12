@@ -108,6 +108,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
         imageUrl: evt.image || '',
         artistLightningAddress: evt.artistLightningAddress || '',
         recurring: evt.recurring || '',
+        recurringAmount: '',
       };
     }
       return {
@@ -123,6 +124,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
         imageUrl: '',
         artistLightningAddress: '',
         recurring: '',
+        recurringAmount: '',
       };
   };
 
@@ -134,6 +136,15 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
     setForm(getInitialForm());
     setPublished(false);
   }, [editingEvent]);
+
+  // Set default recurring amount when recurrence type changes
+  useEffect(() => {
+    if (form.recurring && !form.recurringAmount) {
+      const maxAmounts = { weekly: 26, biweekly: 13, monthly: 6 };
+      const max = maxAmounts[form.recurring as keyof typeof maxAmounts] || 26;
+      setForm((prev) => ({ ...prev, recurringAmount: String(max) }));
+    }
+  }, [form.recurring]);
 
   // Generate time slots from 4pm to 4am
   const timeSlots: { value: string; label: string }[] = [];
@@ -172,7 +183,14 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
   };
 
   const set = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const updates = { [field]: value };
+      // When recurring is cleared, also clear recurringAmount
+      if (field === 'recurring' && value === '') {
+        updates.recurringAmount = '';
+      }
+      return { ...prev, ...updates };
+    });
 
     // Auto-populate end time with start + 4 hours if start time is set and end is empty
     if (field === 'startTime' && value && !form.endTime) {
@@ -292,6 +310,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
         artistLightningAddress: form.artistLightningAddress || undefined,
         existingDTag: isEditing ? editingEvent.dTag : undefined,
         recurring: form.recurring as '' | 'weekly' | 'biweekly' | 'monthly',
+        recurringAmount: form.recurring ? (parseInt(form.recurringAmount) || 26) : undefined,
       },
       {
         onSuccess: () => {
@@ -484,6 +503,26 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
             <option value="monthly">Monthly</option>
           </select>
         </div>
+
+        {/* Quantity - shown only when recurring is selected */}
+        {form.recurring && (
+          <div>
+            <label className={labelClass}>Quantity</label>
+            <select
+              className={fieldClass}
+              value={form.recurringAmount}
+              onChange={(e) => set('recurringAmount', e.target.value)}
+            >
+              {(() => {
+                const maxAmounts = { weekly: 26, biweekly: 13, monthly: 6 };
+                const max = maxAmounts[form.recurring as keyof typeof maxAmounts] || 26;
+                return Array.from({ length: max }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ));
+              })()}
+            </select>
+          </div>
+        )}
 
         {/* Location */}
         <div className="md:col-span-2">
