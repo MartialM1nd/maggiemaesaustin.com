@@ -20,6 +20,8 @@ export interface PublishEventInput {
   artistLightningAddress?: string;
   /** If provided, the event will replace an existing event with this d-tag (NIP-52 edit) */
   existingDTag?: string;
+  /** Recurrence type: weekly, biweekly, or monthly */
+  recurring?: '' | 'weekly' | 'biweekly' | 'monthly';
 }
 
 /** Convert a datetime-local string to a unix timestamp (seconds). */
@@ -30,6 +32,28 @@ function localToUnix(localStr: string): number {
 /** Generate a unique d-tag identifier. */
 function generateDTag(): string {
   return `maggie-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Calculate recurrence end date (6 months from now) */
+function getRecurringUntil(): number {
+  const now = new Date();
+  now.setMonth(now.getMonth() + 6);
+  return Math.floor(now.getTime() / 1000);
+}
+
+/** Calculate number of events to create based on recurrence type */
+function getRecurrenceCount(type: 'weekly' | 'biweekly' | 'monthly'): number {
+  const now = Date.now() / 1000;
+  const until = getRecurringUntil();
+  const secondsIn6Months = until - now;
+  
+  const intervals = {
+    weekly: 7 * 24 * 60 * 60,
+    biweekly: 14 * 24 * 60 * 60,
+    monthly: 30 * 24 * 60 * 60,
+  };
+  
+  return Math.ceil(secondsIn6Months / intervals[type]);
 }
 
 /**
@@ -45,64 +69,95 @@ export function usePublishMaggieEvent() {
     mutationFn: async (input: PublishEventInput) => {
       if (!user) throw new Error('Not logged in');
 
-      const start = localToUnix(input.startLocal);
-      const end = input.endLocal ? localToUnix(input.endLocal) : undefined;
+      const isRecurring = input.recurring && input.recurring !== '';
+      const intervals = {
+        weekly: 7 * 24 * 60 * 60,
+        biweekly: 14 * 24 * 60 * 60,
+        monthly: 30 * 24 * 60 * 60,
+      };
+      
+      const baseInterval = isRecurring ? intervals[input.recurring as 'weekly' | 'biweekly' | 'monthly'] : 0;
+      const numEvents = isRecurring ? getRecurrenceCount(input.recurring as 'weekly' | 'biweekly' | 'monthly') : 1;
+      const recurringUntil = isRecurring ? getRecurringUntil() : undefined;
 
-      // NIP-52 requires D tags (day-granularity unix day numbers)
-      const secondsInDay = 86400;
-      const dTags: string[][] = [];
-      if (end) {
-        let day = Math.floor(start / secondsInDay);
-        const lastDay = Math.floor(end / secondsInDay);
-        while (day <= lastDay) {
-          dTags.push(['D', String(day)]);
-          day++;
+      // Create multiple events if recurring
+      for (let i = 0; i < numEvents; i++) {
+        const eventStart = Math.floor((new Date(input.startLocal).getTime() + i * baseInterval * 1000) / 1000);
+        const eventEnd = input.endLocal 
+          ? Math.floor((new Date(input.endLocal).getTime() + i * baseInterval * 1000) / 1000)
+          : undefined;
+
+        // NIP-52 requires D tags (day-granularity unix day numbers)
+        const secondsInDay = 86400;
+        const dTags: string[][] = [];
+        if (eventEnd) {
+          let day = Math.floor(eventStart / secondsInDay);
+          const lastDay = Math.floor(eventEnd / secondsInDay);
+          while (day <= lastDay) {
+            dTags.push(['D', String(day)]);
+            day++;
+          }
+        } else {
+          dTags.push(['D', String(Math.floor(eventStart / secondsInDay))]);
         }
-      } else {
-        dTags.push(['D', String(Math.floor(start / secondsInDay))]);
+
+        // Generate unique d-tag for each recurring event
+        const dTag = input.existingDTag 
+          ? (i === 0 ? input.existingDTag : `${input.existingDTag}-${i}`)
+          : `${generateDTag()}-${i}`;
+
+        const tags: string[][] = [
+          ['d', dTag],
+          ['title', input.title],
+          ['summary', input.summary || input.title],
+          ['start', String(eventStart)],
+          ['start_tzid', 'America/Chicago'],
+          ['location', input.location || '323 E. 6th Street, Austin TX 78701'],
+          ['stage', input.stage],
+          ['price', input.price || 'Free'],
+          ['t', MAGGIE_MAES_TAG],
+          ['t', 'livemusic'],
+          ['t', 'austin'],
+          ...dTags,
+        ];
+
+        // Add recurrence tags only to the first event
+        if (isRecurring && i === 0) {
+          tags.push(['recurring', input.recurring]);
+          if (recurringUntil) {
+            tags.push(['recurring_until', String(recurringUntil)]);
+          }
+        }
+
+        if (eventEnd) {
+          tags.push(['end', String(eventEnd)]);
+          tags.push(['end_tzid', 'America/Chicago']);
+        }
+
+        if (input.imageUrl) {
+          tags.push(['image', input.imageUrl]);
+        }
+
+        if (input.artistLightningAddress) {
+          tags.push(['lud16', input.artistLightningAddress]);
+        }
+
+        // Sign the event
+        const signed = await user.signer.signEvent({
+          kind: 31923,
+          content: input.description,
+          tags,
+          created_at: Math.floor(Date.now() / 1000) + i, // Stagger timestamps slightly
+        });
+
+        // eventRouter in NostrProvider automatically routes kind:31923 to bar relays
+        await nostr.event(signed, { signal: AbortSignal.timeout(8000) });
+        
+        // Small delay between events to avoid rate limiting
+        if (i > 0 && i % 5 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
-
-      // Use existing d-tag if editing, otherwise generate new one
-      const dTag = input.existingDTag || generateDTag();
-
-      const tags: string[][] = [
-        ['d', dTag],
-        ['title', input.title],
-        ['summary', input.summary || input.title],
-        ['start', String(start)],
-        ['start_tzid', 'America/Chicago'],
-        ['location', input.location || '323 E. 6th Street, Austin TX 78701'],
-        ['stage', input.stage],
-        ['price', input.price || 'Free'],
-        ['t', MAGGIE_MAES_TAG],
-        ['t', 'livemusic'],
-        ['t', 'austin'],
-        ...dTags,
-      ];
-
-      if (end) {
-        tags.push(['end', String(end)]);
-        tags.push(['end_tzid', 'America/Chicago']);
-      }
-
-      if (input.imageUrl) {
-        tags.push(['image', input.imageUrl]);
-      }
-
-      if (input.artistLightningAddress) {
-        tags.push(['lud16', input.artistLightningAddress]);
-      }
-
-      // Sign the event
-      const signed = await user.signer.signEvent({
-        kind: 31923,
-        content: input.description,
-        tags,
-        created_at: Math.floor(Date.now() / 1000),
-      });
-
-      // eventRouter in NostrProvider automatically routes kind:31923 to bar relays
-      await nostr.event(signed, { signal: AbortSignal.timeout(8000) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maggie-events'] });

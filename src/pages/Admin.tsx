@@ -107,6 +107,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
         price: evt.price,
         imageUrl: evt.image || '',
         artistLightningAddress: evt.artistLightningAddress || '',
+        recurring: evt.recurring || '',
       };
     }
       return {
@@ -121,6 +122,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
         price: 'Free',
         imageUrl: '',
         artistLightningAddress: '',
+        recurring: '',
       };
   };
 
@@ -289,6 +291,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
         imageUrl: form.imageUrl || undefined,
         artistLightningAddress: form.artistLightningAddress || undefined,
         existingDTag: isEditing ? editingEvent.dTag : undefined,
+        recurring: form.recurring as '' | 'weekly' | 'biweekly' | 'monthly',
       },
       {
         onSuccess: () => {
@@ -310,6 +313,7 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
               price: 'Free',
               imageUrl: '',
               artistLightningAddress: '',
+              recurring: '',
             });
           }
           setTimeout(() => setPublished(false), 4000);
@@ -464,6 +468,21 @@ function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFormProps)
             value={form.artistLightningAddress}
             onChange={(e) => set('artistLightningAddress', e.target.value)}
           />
+        </div>
+
+        {/* Recurring */}
+        <div>
+          <label className={labelClass}>Recurring</label>
+          <select
+            className={fieldClass}
+            value={form.recurring}
+            onChange={(e) => set('recurring', e.target.value)}
+          >
+            <option value="">None</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi-weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
         </div>
 
         {/* Location */}
@@ -675,6 +694,11 @@ function EventListItem({ event, isEventOwner, onEditEvent, onDelete, deletingId 
         </p>
         {event.price && (
           <p className="text-xs text-primary font-display mt-0.5">{event.price}</p>
+        )}
+        {event.recurring && (
+          <p className="text-xs text-amber-500 font-display mt-0.5">
+            📅 {event.recurring.charAt(0).toUpperCase() + event.recurring.slice(1)}
+          </p>
         )}
       </div>
       <div className="flex items-center gap-2">
@@ -1292,7 +1316,7 @@ function IdentityTab() {
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {isBarIdentity && (
                     <span className="text-[10px] font-display tracking-wider text-primary border border-primary/30 rounded-full px-2 py-0.5">
-                      Bar Identity
+                      Venue Owner
                     </span>
                   )}
                   {isMe && !isBarIdentity && (

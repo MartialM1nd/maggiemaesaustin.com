@@ -21,7 +21,7 @@
     --secondary-foreground: 38 60% 88%;
 
     --muted: 28 15% 18%;
-    --muted-foreground: 38 30% 60%;
+    --muted-foreground: 38 60% 88%;
 
     --accent: 8 80% 45%;              /* Brick red / rust */
     --accent-foreground: 38 60% 88%;
@@ -58,7 +58,7 @@
     --secondary: 20 40% 20%;
     --secondary-foreground: 38 60% 88%;
     --muted: 28 15% 18%;
-    --muted-foreground: 38 30% 60%;
+    --muted-foreground: 38 60% 88%;
     --accent: 8 80% 45%;
     --accent-foreground: 38 60% 88%;
     --destructive: 0 62.8% 40%;

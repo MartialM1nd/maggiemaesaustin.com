@@ -40,6 +40,10 @@ export interface MaggieEvent {
   summary: string;
   /** Artist's lightning address for zaps (NIP-57 lud16 tag) */
   artistLightningAddress?: string;
+  /** Recurrence type: weekly, biweekly (bi-monthly), or monthly */
+  recurring?: 'weekly' | 'biweekly' | 'monthly';
+  /** Unix timestamp when recurring series ends */
+  recurringUntil?: number;
 }
 
 /** Parse a raw NIP-52 kind:31923 event into a typed MaggieEvent. Returns null if invalid. */
@@ -77,6 +81,8 @@ export function parseMaggieEvent(event: NostrEvent): MaggieEvent | null {
     price: tag('price') ?? 'Free',
     summary: tag('summary') ?? '',
     artistLightningAddress: tag('lud16'),
+    recurring: (tag('recurring') as 'weekly' | 'biweekly' | 'monthly' | undefined),
+    recurringUntil: tag('recurring_until') ? parseInt(tag('recurring_until')!, 10) : undefined,
   };
 }
 
