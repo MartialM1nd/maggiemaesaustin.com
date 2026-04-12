@@ -1162,15 +1162,33 @@ function IdentityTab() {
         {/* Existing admins */}
         <div className="space-y-2">
           {adminPubkeys.map((pk) => {
+            const author = useAuthor(pk);
+            const meta = author.data?.metadata;
             const npub = nip19.npubEncode(pk);
             const isBarIdentity = pk === MAGGIE_MAES_PUBKEY;
             const _isDefault = DEFAULT_ADMIN_PUBKEYS.includes(pk);
             const isMe = user?.pubkey === pk;
+
+            // Human-readable name: name → display_name → nip05 → truncated npub
+            const displayName = meta?.name ?? meta?.display_name ?? meta?.nip05 ?? npub.slice(0, 12) + '...';
+            const avatarUrl = meta?.picture;
+
             return (
               <div key={pk} className="flex items-center gap-2 group">
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  <AvatarImage src={avatarUrl} alt={displayName} />
+                  <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+                    {displayName.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0 bg-muted rounded px-3 py-2">
-                  <p className="text-xs font-mono text-foreground truncate">{npub}</p>
-                  <p className="text-[10px] font-mono text-muted-foreground truncate">{pk}</p>
+                  <p className="text-sm text-foreground truncate font-medium">
+                    {displayName}
+                    {meta?.nip05 && !meta?.name && !meta?.display_name && (
+                      <span className="text-muted-foreground font-normal"> ({meta.nip05})</span>
+                    )}
+                  </p>
+                  <p className="text-[10px] font-mono text-muted-foreground truncate">{npub}</p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {isBarIdentity && (
