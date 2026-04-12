@@ -8,7 +8,7 @@
  *   1. Replace MAGGIE_MAES_PUBKEY with Maggie Mae's official Nostr hex pubkey.
  */
 export const MAGGIE_MAES_PUBKEY =
-  'ac391a41b2cfb30d77480b5c32322e1989db91db89a253775162871677d1954e';
+  '43a2a0cc9a38834bb437881d1a350f799c40a13ffd3543600787c82a29d12d82';
 
 /**
  * The fallback admin pubkeys used when the NIP-78 admin list cannot be fetched.
