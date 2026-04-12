@@ -1104,42 +1104,43 @@ function IdentityTab() {
         <h3 className="font-display text-xs tracking-widest uppercase text-muted-foreground">
           Logged-In Identity
         </h3>
-        <div className="space-y-3">
-          <div>
-            <p className="font-display text-xs tracking-wider uppercase text-muted-foreground mb-1">npub</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs bg-muted px-3 py-2 rounded font-mono text-foreground truncate">
-                {currentNpub || '—'}
-              </code>
-              {currentNpub && (
-                <button
-                  onClick={() => copy(currentNpub)}
-                  className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
-                  title="Copy npub"
-                >
-                  {copiedKey === currentNpub ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
-                </button>
-              )}
+        {user && (() => {
+          const author = useAuthor(user.pubkey);
+          const meta = author.data?.metadata;
+          const npub = currentNpub;
+          const displayName = meta?.name ?? meta?.display_name ?? meta?.nip05 ?? npub.slice(0, 12) + '...';
+          const avatarUrl = meta?.picture;
+
+          return (
+            <div className="flex items-center gap-3">
+              <Avatar className="w-12 h-12 flex-shrink-0">
+                <AvatarImage src={avatarUrl} alt={displayName} />
+                <AvatarFallback className="bg-muted text-muted-foreground">
+                  {displayName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-foreground font-medium truncate">
+                  {displayName}
+                  {meta?.nip05 && !meta?.name && !meta?.display_name && (
+                    <span className="text-muted-foreground font-normal"> ({meta.nip05})</span>
+                  )}
+                </p>
+                <p className="text-xs font-mono text-muted-foreground truncate">{npub}</p>
+              </div>
+              <button
+                onClick={() => copy(npub)}
+                className="text-muted-foreground hover:text-primary transition-colors p-1"
+                title="Copy npub"
+              >
+                {copiedKey === npub ? <CheckCircle2 size={16} className="text-green-500" /> : <Copy size={16} />}
+              </button>
             </div>
-          </div>
-          <div>
-            <p className="font-display text-xs tracking-wider uppercase text-muted-foreground mb-1">Hex Pubkey</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs bg-muted px-3 py-2 rounded font-mono text-foreground truncate">
-                {user?.pubkey ?? '—'}
-              </code>
-              {user && (
-                <button
-                  onClick={() => copy(user.pubkey)}
-                  className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
-                  title="Copy hex"
-                >
-                  {copiedKey === user.pubkey ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+          );
+        })()}
+        {!user && (
+          <p className="text-muted-foreground text-sm">Not logged in</p>
+        )}
         <div className="pt-1 border-t border-border">
           <p className="font-display text-xs tracking-wider uppercase text-muted-foreground mb-2">
             Switch Account
