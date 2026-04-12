@@ -10,7 +10,7 @@ import { nip19 } from 'nostr-tools';
 import { Layout } from '@/components/Layout';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useMaggieEvents } from '@/hooks/useMaggieEvents';
+import { useMaggieEvents, useMaggiePastEvents } from '@/hooks/useMaggieEvents';
 import { usePublishMaggieEvent } from '@/hooks/usePublishMaggieEvent';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useQueryClient } from '@tanstack/react-query';
@@ -707,13 +707,44 @@ function EventListItem({ event, isEventOwner, onEditEvent, onDelete, deletingId 
 }
 
 function ManageEvents({ onEditEvent }: ManageEventsProps) {
-  const { data: events, isLoading } = useMaggieEvents();
+  const { data: upcomingEvents, isLoading: upcomingLoading } = useMaggieEvents();
   const { mutateAsync: createEvent } = useNostrPublish();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { user } = useCurrentUser();
   const currentUserPubkey = user?.pubkey.toLowerCase();
+
+  // Past events state
+  const [showPast, setShowPast] = useState(false);
+  const [pastEvents, setPastEvents] = useState<MaggieEvent[]>([]);
+  const [pastLimit, setPastLimit] = useState(10);
+
+  const { data: newPastEvents, isLoading: pastLoading } = useMaggiePastEvents(pastLimit);
+
+  // Update past events when new data arrives
+  useEffect(() => {
+    if (newPastEvents && showPast) {
+      setPastEvents(newPastEvents);
+    }
+  }, [newPastEvents, showPast]);
+
+  const hasMorePast = pastEvents.length >= pastLimit && pastEvents.length > 0;
+
+  const handleLoadMore = () => {
+    setPastLimit((prev) => prev + 10);
+  };
+
+  const handleShowPast = () => {
+    setShowPast(true);
+    setPastLimit(10);
+  };
+
+  const handleBackToUpcoming = () => {
+    setShowPast(false);
+    setPastEvents([]);
+    setPastLimit(10);
+  };
 
   const handleDelete = async (event: MaggieEvent) => {
     if (!event) return;
@@ -728,6 +759,7 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
       });
       toast({ title: 'Deletion requested', description: 'Relays have been asked to remove this event.' });
       queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
+      queryClient.invalidateQueries({ queryKey: ['maggie-past-events'] });
     } catch (err) {
       toast({ title: 'Delete failed', description: String(err), variant: 'destructive' });
     } finally {
@@ -735,24 +767,7 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-2 text-muted-foreground py-8">
-        <Loader2 size={16} className="animate-spin" />
-        <span className="font-serif text-sm">Loading events…</span>
-      </div>
-    );
-  }
-
-  if (!events || events.length === 0) {
-    return (
-      <div className="py-8 text-center">
-        <p className="text-muted-foreground font-serif text-sm">No upcoming events found. Publish one using the Publish Event tab.</p>
-      </div>
-    );
-  }
-
-  return (
+  const renderEventList = (events: MaggieEvent[]) => (
     <div className="space-y-3 max-w-2xl">
       {events.map((event) => (
         <EventListItem
@@ -764,6 +779,89 @@ function ManageEvents({ onEditEvent }: ManageEventsProps) {
           deletingId={deletingId}
         />
       ))}
+    </div>
+  );
+
+  // Loading state
+  if (upcomingLoading || (showPast && pastLoading)) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground py-8">
+        <Loader2 size={16} className="animate-spin" />
+        <span className="font-serif text-sm">Loading events…</span>
+      </div>
+    );
+  }
+
+  // Show past events
+  if (showPast) {
+    if (!pastEvents || pastEvents.length === 0) {
+      return (
+        <div className="space-y-4">
+          <button
+            onClick={handleBackToUpcoming}
+            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            ← Back to Upcoming
+          </button>
+          <div className="py-8 text-center">
+            <p className="text-muted-foreground font-serif text-sm">No past events found.</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={handleBackToUpcoming}
+          className="text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          ← Back to Upcoming
+        </button>
+        <div className="flex items-center justify-between">
+          <p className="font-display text-xs tracking-widest uppercase text-muted-foreground">
+            Past Events ({pastEvents.length} shown)
+          </p>
+        </div>
+        {renderEventList(pastEvents)}
+        {hasMorePast && (
+          <button
+            onClick={handleLoadMore}
+            className="w-full py-2 text-sm text-muted-foreground hover:text-primary border border-border rounded hover:border-primary/50 transition-colors"
+          >
+            Load More
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Show upcoming events (or empty state)
+  const hasUpcomingEvents = upcomingEvents && upcomingEvents.length > 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Show Past Events button - always visible when not showing past */}
+      {!showPast && (
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleShowPast}
+            className="text-sm text-muted-foreground hover:text-primary transition-colors font-display tracking-wider"
+          >
+            Show Past Events →
+          </button>
+        </div>
+      )}
+
+      {hasUpcomingEvents ? (
+        renderEventList(upcomingEvents)
+      ) : (
+        !showPast && (
+          <div className="py-8 text-center">
+            <p className="text-muted-foreground font-serif text-sm">No upcoming events found. Publish one using the Publish Event tab.</p>
+          </div>
+        )
+      )}
     </div>
   );
 }

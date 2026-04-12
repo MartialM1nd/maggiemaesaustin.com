@@ -10,6 +10,11 @@ import {
   type MaggieEvent,
 } from '@/lib/maggie';
 
+/** Sort comparator: latest start first (descending) */
+function sortByStartDesc(a: MaggieEvent, b: MaggieEvent): number {
+  return b.start - a.start;
+}
+
 /**
  * Query upcoming NIP-52 kind:31923 calendar events for Maggie Mae's.
  *
@@ -39,6 +44,41 @@ export function useMaggieEvents() {
         .sort(sortByStart);
     },
     staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+/**
+ * Query past NIP-52 kind:31923 calendar events for Maggie Mae's.
+ * Used by Admin page to view past events.
+ * 
+ * @param limit - Maximum number of events to return (default 10)
+ */
+export function useMaggiePastEvents(limit: number = 10) {
+  const { nostr } = useNostr();
+  const { adminPubkeys } = useAdminConfig();
+  const { barRelays } = useBarRelays();
+
+  const now = Math.floor(Date.now() / 1000);
+
+  return useQuery({
+    queryKey: ['maggie-past-events', limit, adminPubkeys.join(','), barRelays.join(',')],
+    queryFn: async ({ signal }) => {
+      const events = await nostr.query(
+        [{ kinds: [31923], authors: adminPubkeys, until: now, limit }],
+        { signal },
+      );
+
+      return events
+        .map(parseMaggieEvent)
+        .filter((e): e is MaggieEvent => e !== null)
+        .filter((e) =>
+          e.raw.tags.some(([name, val]) => name === 't' && val === MAGGIE_MAES_TAG),
+        )
+        .filter((e) => !isFutureEvent(e))
+        .sort(sortByStartDesc);
+    },
+    staleTime: 30_000,
     retry: 1,
   });
 }
