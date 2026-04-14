@@ -18,23 +18,25 @@ function sortByStartDesc(a: MaggieEvent, b: MaggieEvent): number {
 /**
  * Query upcoming NIP-52 kind:31923 calendar events for Maggie Mae's.
  *
- * The NPool in NostrProvider routes kind:31923 queries directly to the
- * bar relays (barRelaysRef) — completely separate from the user's relay list.
+ * @param limit - Maximum number of events to return (default 20)
  */
-export function useMaggieEvents() {
+export function useMaggieEvents(limit: number = 20) {
   const { nostr } = useNostr();
   const { adminPubkeys } = useAdminConfig();
   const { barRelays } = useBarRelays();
 
+  // Always fetch at least 100 to ensure we get enough future events after filtering
+  const fetchLimit = Math.max(limit * 3, 100);
+
   return useQuery({
-    queryKey: ['maggie-events', adminPubkeys.join(','), barRelays.join(',')],
+    queryKey: ['maggie-events', limit, adminPubkeys.join(','), barRelays.join(',')],
     queryFn: async ({ signal }) => {
       const events = await nostr.query(
-        [{ kinds: [31923], authors: adminPubkeys, limit: 100 }],
+        [{ kinds: [31923], authors: adminPubkeys, limit: fetchLimit }],
         { signal },
       );
 
-      return events
+      const parsed = events
         .map(parseMaggieEvent)
         .filter((e): e is MaggieEvent => e !== null)
         .filter((e) =>
@@ -42,6 +44,9 @@ export function useMaggieEvents() {
         )
         .filter(isFutureEvent)
         .sort(sortByStart);
+
+      // Return only the requested limit after filtering
+      return parsed.slice(0, limit);
     },
     staleTime: 60_000,
     retry: 1,
@@ -95,14 +100,23 @@ export function useMaggieEventsForMonth(startDate: Date, endDate: Date) {
   const { adminPubkeys } = useAdminConfig();
   const { barRelays } = useBarRelays();
 
-  const since = Math.floor(startDate.getTime() / 1000);
-  const until = Math.floor(endDate.getTime() / 1000);
+  // The start of the month in unix seconds (for client-side filtering by event start tag)
+  const monthSince = Math.floor(startDate.getTime() / 1000);
+  // Include entire last day of the month
+  const monthUntil = Math.floor(endDate.getTime() / 1000) + 86400;
+
+  const enabled = adminPubkeys.length > 0 && barRelays.length > 0;
 
   return useQuery({
-    queryKey: ['maggie-events-month', since, until, adminPubkeys.join(','), barRelays.join(',')],
+    queryKey: ['maggie-events-month', monthSince, monthUntil, adminPubkeys.join(','), barRelays.join(',')],
+    enabled,
+    refetchOnMount: true,
     queryFn: async ({ signal }) => {
+      // NOTE: Nostr `since`/`until` filter by the event's created_at (publish time),
+      // NOT the NIP-52 `start` tag. Events are published weeks/months before they occur,
+      // so we must fetch all events and filter by the `start` tag in JS.
       const events = await nostr.query(
-        [{ kinds: [31923], authors: adminPubkeys, since, until }],
+        [{ kinds: [31923], authors: adminPubkeys, limit: 500 }],
         { signal },
       );
 
@@ -112,9 +126,11 @@ export function useMaggieEventsForMonth(startDate: Date, endDate: Date) {
         .filter((e) =>
           e.raw.tags.some(([name, val]) => name === 't' && val === MAGGIE_MAES_TAG),
         )
+        // Filter by the event's start tag to match the requested month
+        .filter((e) => e.start >= monthSince && e.start < monthUntil)
         .sort(sortByStart);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 }

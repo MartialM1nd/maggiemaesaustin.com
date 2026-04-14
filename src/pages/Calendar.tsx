@@ -33,7 +33,7 @@ export default function CalendarPage() {
     description: "Full calendar of live music events at Maggie Mae's Bar on Sixth Street, Austin TX.",
   });
 
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
