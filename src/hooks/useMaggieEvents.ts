@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
+import type { NostrEvent } from '@nostrify/nostrify';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import { useBarRelays } from '@/hooks/useBarRelays';
 import { MAGGIE_MAES_TAG } from '@/lib/config';
+import { nowSecs } from '@/lib/utils';
 import {
   parseMaggieEvent,
   isFutureEvent,
@@ -13,6 +15,17 @@ import {
 /** Sort comparator: latest start first (descending) */
 function sortByStartDesc(a: MaggieEvent, b: MaggieEvent): number {
   return b.start - a.start;
+}
+
+/**
+ * Parse, validate and filter a raw Nostr event array into typed MaggieEvents.
+ * Shared pipeline used by all three query functions below.
+ */
+function parseMaggieEventList(events: NostrEvent[]): MaggieEvent[] {
+  return events
+    .map(parseMaggieEvent)
+    .filter((e): e is MaggieEvent => e !== null)
+    .filter((e) => e.raw.tags.some(([name, val]) => name === 't' && val === MAGGIE_MAES_TAG));
 }
 
 /**
@@ -36,16 +49,10 @@ export function useMaggieEvents(limit: number = 20) {
         { signal },
       );
 
-      const parsed = events
-        .map(parseMaggieEvent)
-        .filter((e): e is MaggieEvent => e !== null)
-        .filter((e) =>
-          e.raw.tags.some(([name, val]) => name === 't' && val === MAGGIE_MAES_TAG),
-        )
+      const parsed = parseMaggieEventList(events)
         .filter(isFutureEvent)
         .sort(sortByStart);
 
-      // Return only the requested limit after filtering
       return parsed.slice(0, limit);
     },
     staleTime: 60_000,
@@ -64,7 +71,7 @@ export function useMaggiePastEvents(limit: number = 10) {
   const { adminPubkeys } = useAdminConfig();
   const { barRelays } = useBarRelays();
 
-  const now = Math.floor(Date.now() / 1000);
+  const now = nowSecs();
 
   return useQuery({
     queryKey: ['maggie-past-events', limit, adminPubkeys.join(','), barRelays.join(',')],
@@ -74,12 +81,7 @@ export function useMaggiePastEvents(limit: number = 10) {
         { signal },
       );
 
-      return events
-        .map(parseMaggieEvent)
-        .filter((e): e is MaggieEvent => e !== null)
-        .filter((e) =>
-          e.raw.tags.some(([name, val]) => name === 't' && val === MAGGIE_MAES_TAG),
-        )
+      return parseMaggieEventList(events)
         .filter((e) => !isFutureEvent(e))
         .sort(sortByStartDesc);
     },
@@ -120,13 +122,7 @@ export function useMaggieEventsForMonth(startDate: Date, endDate: Date) {
         { signal },
       );
 
-      return events
-        .map(parseMaggieEvent)
-        .filter((e): e is MaggieEvent => e !== null)
-        .filter((e) =>
-          e.raw.tags.some(([name, val]) => name === 't' && val === MAGGIE_MAES_TAG),
-        )
-        // Filter by the event's start tag to match the requested month
+      return parseMaggieEventList(events)
         .filter((e) => e.start >= monthSince && e.start < monthUntil)
         .sort(sortByStart);
     },

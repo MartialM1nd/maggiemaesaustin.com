@@ -29,26 +29,10 @@ export const ADMIN_LIST_DTAG = 'maggiemaes-admin-list';
 export const TEMPLATES_DTAG = 'maggiemaes-event-templates';
 
 /**
- * localStorage key - deprecated, no longer used for admin storage.
- * Kept for reference only.
- * @deprecated Admin list is now stored on Nostr via NIP-78 (kind 30078).
+ * localStorage key for caching the admin pubkey list locally.
+ * Used by useAdminList to persist the relay-fetched list for immediate availability on reload.
  */
 export const ADMIN_PUBKEYS_STORAGE_KEY = 'maggie:adminPubkeys';
-
-/**
- * Synchronous fallback for non-hook contexts.
- * Returns DEFAULT_ADMIN_PUBKEYS - for live data, use useAdminConfig() hook.
- * @deprecated Use useAdminConfig() hook for dynamic admin list from Nostr.
- */
-export function getAdminPubkeys(): string[] {
-  return DEFAULT_ADMIN_PUBKEYS;
-}
-
-/**
- * Static default - do not use for runtime access.
- * @deprecated Use useAdminConfig() hook for dynamic admin list from Nostr.
- */
-export const ADMIN_PUBKEYS: string[] = DEFAULT_ADMIN_PUBKEYS;
 
 /**
  * The hashtag applied to all Maggie Mae's events.
@@ -66,13 +50,13 @@ export type MaggieStage = (typeof MAGGIE_MAES_STAGES)[number];
  * Stage color mapping for UI display.
  * Maps stage names to Tailwind border/text color classes.
  */
-export const STAGE_COLORS: Record<string, { border: string; text: string }> = {
-  'The Pub': { border: 'border-primary', text: 'text-primary' },
-  'Disco Room': { border: 'border-rose-500', text: 'text-rose-500' },
-  'Gibson Room': { border: 'border-amber-700', text: 'text-amber-700' },
-  'Piano Room': { border: 'border-emerald-500', text: 'text-emerald-500' },
-  'Rooftop Patio': { border: 'border-slate-400', text: 'text-slate-400' },
-  'Cypherpunk Lounge': { border: 'border-orange-600', text: 'text-orange-600' },
+export const STAGE_COLORS: Record<string, { border: string; text: string; bg: string }> = {
+  'The Pub': { border: 'border-primary', text: 'text-primary', bg: 'bg-primary' },
+  'Disco Room': { border: 'border-rose-500', text: 'text-rose-500', bg: 'bg-rose-500' },
+  'Gibson Room': { border: 'border-amber-700', text: 'text-amber-700', bg: 'bg-amber-700' },
+  'Piano Room': { border: 'border-emerald-500', text: 'text-emerald-500', bg: 'bg-emerald-500' },
+  'Rooftop Patio': { border: 'border-slate-400', text: 'text-slate-400', bg: 'bg-slate-400' },
+  'Cypherpunk Lounge': { border: 'border-orange-600', text: 'text-orange-600', bg: 'bg-orange-600' },
 };
 
 /**

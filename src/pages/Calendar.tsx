@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Calendar as CalendarIcon, Music, ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { Layout } from '@/components/Layout';
 import { EventCard } from '@/components/EventCard';
@@ -12,19 +12,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MaggieEvent } from '@/lib/maggie';
-import { ResponsiveImage } from '@/components/ResponsiveImage';
-
-const calendarStageColors: Record<string, string> = {
-  'The Pub': 'bg-primary',
-  'Disco Room': 'bg-rose-500',
-  'Gibson Room': 'bg-amber-700',
-  'Piano Room': 'bg-emerald-500',
-  'Rooftop Patio': 'bg-slate-400',
-  'Cypherpunk Lounge': 'bg-orange-600',
-};
+import { STAGE_COLORS } from '@/lib/config';
+import { StageFilterBar } from '@/components/StageFilterBar';
+import { PageHero } from '@/components/PageHero';
 
 function getStageColor(stage: string): string {
-  return calendarStageColors[stage] || 'bg-primary';
+  return STAGE_COLORS[stage]?.bg || 'bg-primary';
 }
 
 export default function CalendarPage() {
@@ -73,56 +66,15 @@ export default function CalendarPage() {
 
   return (
     <Layout>
-      <section className="relative isolate pt-32 pb-12 overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <ResponsiveImage
-            baseName="bldg-front-night"
-            alt=""
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-background/80 to-background" />
-        </div>
-        <div className="container mx-auto px-4 md:px-8 text-center">
-          <p className="font-display text-primary text-xs tracking-[0.3em] uppercase mb-3">
-            Live Music
-          </p>
-          <h1 className="font-serif text-5xl md:text-6xl font-black text-foreground mb-4">
-            Event <span className="gold-text">Calendar</span>
-          </h1>
-          <p className="text-muted-foreground font-serif text-lg max-w-lg mx-auto">
-            Browse all upcoming shows across our stages. Click any date to see details.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        baseName="bldg-front-night"
+        eyebrow="Live Music"
+        title={<>Event <span className="gold-text">Calendar</span></>}
+        subtitle="Browse all upcoming shows across our stages. Click any date to see details."
+        paddingBottom="pb-12"
+      />
 
-      <section className="bg-card border-b border-border py-4">
-        <div className="container mx-auto px-4 md:px-8">
-          <div className="flex flex-wrap items-center gap-4 justify-center">
-            <span className="font-display text-muted-foreground text-xs tracking-widest uppercase">
-              Filter:
-            </span>
-            {Object.entries(calendarStageColors).map(([stage, color]) => {
-              const isActive = selectedStage === stage;
-              return (
-                <button
-                  key={stage}
-                  onClick={() => setSelectedStage(isActive ? null : stage)}
-                  className={cn(
-                    'flex items-center gap-1.5 border rounded px-3 py-1 text-xs font-display tracking-wider transition-all',
-                    isActive
-                      ? `${color} text-white border-transparent`
-                      : `border-${color.replace('bg-', '')} text-${color.replace('bg-', '')} hover:opacity-80`
-                  )}
-                  style={!isActive ? { borderColor: calendarStageColors[stage].replace('bg-', ''), color: calendarStageColors[stage].replace('bg-', '') } : undefined}
-                >
-                  <Music size={10} />
-                  {stage}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <StageFilterBar selectedStage={selectedStage} onSelect={setSelectedStage} />
 
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4 md:px-8">
@@ -252,7 +204,6 @@ export default function CalendarPage() {
                                       <Badge
                                         variant="secondary"
                                         className={cn('text-[10px] px-1.5 py-0', getStageColor(evt.stage), 'text-white')}
-                                        style={{ backgroundColor: calendarStageColors[evt.stage]?.replace('bg-', '#').replace('700', 'b73') || '#888' }}
                                       >
                                         {evt.stage}
                                       </Badge>

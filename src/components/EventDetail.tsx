@@ -1,69 +1,22 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { nip19 } from 'nostr-tools';
 import { ArrowLeft, Clock, MapPin, CheckCircle2, Users, Calendar, Zap } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ZapButton } from '@/components/ZapButton';
+import { RSVPAvatar } from '@/components/RSVPAvatar';
 import { CommentsSection } from '@/components/comments/CommentsSection';
-import { useEventRSVPs, filterRSVPs } from '@/hooks/useEventRSVPs';
-import { usePublishRSVP } from '@/hooks/usePublishMaggieEvent';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useAuthor } from '@/hooks/useAuthor';
-import { genUserName } from '@/lib/genUserName';
-import { formatEventDate, formatEventTime, eventCoordinate, generateICS, type MaggieEvent } from '@/lib/maggie';
-import { MAGGIE_MAES_PUBKEY, STAGE_COLORS } from '@/lib/config';
+import { useEventRSVPActions } from '@/hooks/useEventRSVPActions';
+import { formatEventDate, formatEventTime, generateICS, type MaggieEvent } from '@/lib/maggie';
+import { STAGE_COLORS } from '@/lib/config';
 import { cn } from '@/lib/utils';
-
-function RSVPAvatar({ pubkey }: { pubkey: string }) {
-  const author = useAuthor(pubkey);
-  const meta = author.data?.metadata;
-  const name = meta?.name ?? genUserName(pubkey);
-  const npub = nip19.npubEncode(pubkey);
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link to={`/${npub}`} className="hover:opacity-80 transition-opacity">
-          <Avatar className="w-8 h-8 border-2 border-background -ml-2 first:ml-0 hover:z-10 relative transition-transform hover:scale-110">
-            <AvatarImage src={meta?.picture} alt={name} />
-            <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-              {name.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent side="top">
-        <p className="text-xs">{name}</p>
-      </TooltipContent>
-    </Tooltip>
-  );
-}
 
 interface EventDetailProps {
   event: MaggieEvent;
 }
 
 export function EventDetail({ event }: EventDetailProps) {
-  const { user } = useCurrentUser();
-  const { data: rsvps = [], isLoading: rsvpsLoading } = useEventRSVPs(event);
-  const { mutate: publishRSVP, isPending: rsvpPending } = usePublishRSVP();
-  const [justRsvpd, setJustRsvpd] = useState(false);
-
-  const coord = eventCoordinate(event);
-  const accepted = filterRSVPs(rsvps, 'accepted');
-  const tentative = filterRSVPs(rsvps, 'tentative');
-  const myRSVP = user ? rsvps.find((r) => r.pubkey === user.pubkey) : undefined;
+  const { user, rsvpsLoading, rsvpPending, accepted, tentative, myRSVP, justRsvpd, handleRSVP } =
+    useEventRSVPActions(event);
   const stageClass = STAGE_COLORS[event.stage] ?? { border: 'border-primary', text: 'text-primary' };
-
-  const handleRSVP = (status: 'accepted' | 'declined' | 'tentative') => {
-    if (!user) return;
-    publishRSVP(
-      { eventCoord: coord, eventAuthorPubkey: MAGGIE_MAES_PUBKEY, status },
-      { onSuccess: () => setJustRsvpd(true) },
-    );
-  };
 
   return (
     <div className="max-w-3xl mx-auto px-4 pt-24 pb-8 space-y-8">
@@ -195,7 +148,7 @@ export function EventDetail({ event }: EventDetailProps) {
           <div className="flex items-center gap-3">
             <div className="flex items-center">
               {accepted.slice(0, 8).map((r) => (
-                <RSVPAvatar key={r.pubkey} pubkey={r.pubkey} />
+                <RSVPAvatar key={r.pubkey} pubkey={r.pubkey} size="md" />
               ))}
             </div>
             <span className="text-sm text-muted-foreground font-display tracking-wide flex items-center gap-1.5">

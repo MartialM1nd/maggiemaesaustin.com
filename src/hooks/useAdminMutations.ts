@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { MAGGIE_MAES_PUBKEY, ADMIN_LIST_DTAG } from '@/lib/config';
+import { nowSecs } from '@/lib/utils';
 
 /**
  * Mutations for updating the admin list stored on Nostr (NIP-78 kind 30078).
@@ -35,7 +36,7 @@ export function useAdminMutations() {
         kind: 30078,
         content: JSON.stringify(pubkeys),
         tags,
-        created_at: Math.floor(Date.now() / 1000),
+        created_at: nowSecs(),
       });
 
       await nostr.event(signed, { signal: AbortSignal.timeout(8000) });

@@ -253,7 +253,7 @@ export function ZapDialog({ target, children, className, lightningAddress }: Zap
 
   useEffect(() => {
     if (target) {
-      setComment('Zapped with MKStack!');
+      setComment("Zapped at Maggie Mae's!");
     }
   }, [target]);
 

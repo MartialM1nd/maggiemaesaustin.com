@@ -1,85 +1,28 @@
-import { useState, useMemo, memo } from 'react';
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
 import { Clock, MapPin, CheckCircle2, Users, ArrowRight, Calendar, Zap } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ZapButton } from '@/components/ZapButton';
-import { useEventRSVPs, filterRSVPs } from '@/hooks/useEventRSVPs';
-import { usePublishRSVP } from '@/hooks/usePublishMaggieEvent';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useAuthor } from '@/hooks/useAuthor';
-import { genUserName } from '@/lib/genUserName';
+import { RSVPAvatar } from '@/components/RSVPAvatar';
+import { useEventRSVPActions } from '@/hooks/useEventRSVPActions';
 import { isValidImageUrl } from '@/lib/validation';
 import {
   formatEventDay,
   formatEventMonth,
   formatEventTime,
-  eventCoordinate,
   generateICS,
   type MaggieEvent,
 } from '@/lib/maggie';
-import { MAGGIE_MAES_PUBKEY, STAGE_COLORS } from '@/lib/config';
+import { STAGE_COLORS } from '@/lib/config';
 import { cn } from '@/lib/utils';
-
-function RSVPAvatar({ pubkey }: { pubkey: string }) {
-  const author = useAuthor(pubkey);
-  const meta = author.data?.metadata;
-  const name = meta?.name ?? genUserName(pubkey);
-  const npub = nip19.npubEncode(pubkey);
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link to={`/${npub}`} className="hover:opacity-80 transition-opacity">
-          <Avatar className="w-7 h-7 border-2 border-background -ml-2 first:ml-0 hover:z-10 relative transition-transform hover:scale-110">
-            <AvatarImage src={isValidImageUrl(meta?.picture || '') ? meta?.picture : undefined} alt={name} />
-            <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-              {name.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent side="top">
-        <p className="text-xs">{name}</p>
-      </TooltipContent>
-    </Tooltip>
-  );
-}
 
 interface EventCardProps {
   event: MaggieEvent;
 }
 
 export const EventCard = memo(function EventCard({ event }: EventCardProps) {
-  const { user } = useCurrentUser();
-  const { data: rsvps = [], isLoading: rsvpsLoading } = useEventRSVPs(event);
-  const { mutate: publishRSVP, isPending: rsvpPending } = usePublishRSVP();
-  const [justRsvpd, setJustRsvpd] = useState(false);
-
-  const coord = eventCoordinate(event);
-  const accepted = useMemo(() => filterRSVPs(rsvps, 'accepted'), [rsvps]);
-  const tentative = useMemo(() => filterRSVPs(rsvps, 'tentative'), [rsvps]);
-
-  // Find the current user's RSVP if they have one
-  const myRSVP = useMemo(() => 
-    user ? rsvps.find((r) => r.pubkey === user.pubkey) : undefined,
-    [user, rsvps]
-  );
-
-  const handleRSVP = (status: 'accepted' | 'declined' | 'tentative') => {
-    if (!user) return;
-    publishRSVP(
-      {
-        eventCoord: coord,
-        eventAuthorPubkey: MAGGIE_MAES_PUBKEY,
-        status,
-      },
-      {
-        onSuccess: () => setJustRsvpd(true),
-      },
-    );
-  };
+  const { user, rsvpsLoading, rsvpPending, accepted, tentative, myRSVP, justRsvpd, handleRSVP } =
+    useEventRSVPActions(event);
 
   const stageClass = STAGE_COLORS[event.stage] ?? { border: 'border-primary', text: 'text-primary' };
 

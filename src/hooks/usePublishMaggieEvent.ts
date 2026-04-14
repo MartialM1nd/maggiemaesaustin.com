@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { MAGGIE_MAES_TAG } from '@/lib/config';
+import { nowSecs } from '@/lib/utils';
 import type { MaggieStage } from '@/lib/config';
 
 export interface PublishEventInput {
@@ -36,6 +37,13 @@ function generateDTag(): string {
   return `maggie-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Seconds in each recurrence interval. */
+const RECURRENCE_INTERVALS: Record<'weekly' | 'biweekly' | 'monthly', number> = {
+  weekly: 7 * 24 * 60 * 60,
+  biweekly: 14 * 24 * 60 * 60,
+  monthly: 30 * 24 * 60 * 60,
+};
+
 /** Calculate recurrence end date (6 months from now) */
 function getRecurringUntil(): number {
   const now = new Date();
@@ -45,17 +53,9 @@ function getRecurringUntil(): number {
 
 /** Calculate number of events to create based on recurrence type */
 function getRecurrenceCount(type: 'weekly' | 'biweekly' | 'monthly'): number {
-  const now = Date.now() / 1000;
+  const now = nowSecs();
   const until = getRecurringUntil();
-  const secondsIn6Months = until - now;
-  
-  const intervals = {
-    weekly: 7 * 24 * 60 * 60,
-    biweekly: 14 * 24 * 60 * 60,
-    monthly: 30 * 24 * 60 * 60,
-  };
-  
-  return Math.ceil(secondsIn6Months / intervals[type]);
+  return Math.ceil((until - now) / RECURRENCE_INTERVALS[type]);
 }
 
 /**
@@ -72,13 +72,7 @@ export function usePublishMaggieEvent() {
       if (!user) throw new Error('Not logged in');
 
       const isRecurring = input.recurring && input.recurring !== '';
-      const intervals = {
-        weekly: 7 * 24 * 60 * 60,
-        biweekly: 14 * 24 * 60 * 60,
-        monthly: 30 * 24 * 60 * 60,
-      };
-      
-      const baseInterval = isRecurring ? intervals[input.recurring as 'weekly' | 'biweekly' | 'monthly'] : 0;
+      const baseInterval = isRecurring ? RECURRENCE_INTERVALS[input.recurring as 'weekly' | 'biweekly' | 'monthly'] : 0;
       // Use provided amount, or default to max based on recurrence type
       const maxForType = { weekly: 26, biweekly: 13, monthly: 6 };
       const maxAmount = input.recurring ? maxForType[input.recurring as keyof typeof maxForType] : 26;
@@ -152,7 +146,7 @@ export function usePublishMaggieEvent() {
           kind: 31923,
           content: input.description,
           tags,
-          created_at: Math.floor(Date.now() / 1000) + i, // Stagger timestamps slightly
+          created_at: nowSecs() + i, // Stagger timestamps slightly
         });
 
         // eventRouter in NostrProvider automatically routes kind:31923 to bar relays
@@ -170,48 +164,5 @@ export function usePublishMaggieEvent() {
   });
 }
 
-/**
- * Publish a NIP-52 kind:31925 RSVP.
- * RSVPs go through the user's normal relay list (their personal Nostr presence).
- */
-export function usePublishRSVP() {
-  const { nostr } = useNostr();
-  const { user } = useCurrentUser();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      eventCoord,
-      eventAuthorPubkey,
-      status,
-      note,
-    }: {
-      eventCoord: string;
-      eventAuthorPubkey: string;
-      status: 'accepted' | 'declined' | 'tentative';
-      note?: string;
-    }) => {
-      if (!user) throw new Error('Not logged in');
-
-      const signed = await user.signer.signEvent({
-        kind: 31925,
-        content: note ?? '',
-        tags: [
-          ['d', `rsvp-${eventCoord}`],
-          ['a', eventCoord],
-          ['p', eventAuthorPubkey],
-          ['status', status],
-        ],
-        created_at: Math.floor(Date.now() / 1000),
-      });
-
-      // RSVPs go to the user's own relays via the normal pool
-      await nostr.event(signed, { signal: AbortSignal.timeout(5000) });
-    },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['maggie-rsvps', variables.eventCoord],
-      });
-    },
-  });
-}
+// usePublishRSVP has been moved to @/hooks/usePublishRSVP
+export { usePublishRSVP } from '@/hooks/usePublishRSVP';

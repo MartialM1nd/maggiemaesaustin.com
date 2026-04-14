@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { Calendar, Music, ExternalLink, Loader2 } from 'lucide-react';
+import { Calendar, ExternalLink, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { EventCard } from '@/components/EventCard';
+import { StageFilterBar } from '@/components/StageFilterBar';
 import { useMaggieEvents } from '@/hooks/useMaggieEvents';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { STAGE_COLORS } from '@/lib/config';
-import { ResponsiveImage } from '@/components/ResponsiveImage';
+import { PageHero } from '@/components/PageHero';
 
 function EventSkeleton() {
   return (
@@ -60,58 +60,15 @@ export default function Events() {
   return (
     <Layout>
       {/* ── PAGE HERO ─────────────────────────────────────────── */}
-      <section className="relative isolate pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <ResponsiveImage
-            baseName="hero-austin"
-            alt=""
-            className="w-full h-full object-cover object-top"
-            sizes="100vw"
-            loading="eager"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-background/80 to-background" />
-        </div>
-        <div className="container mx-auto px-4 md:px-8 text-center">
-          <p className="font-display text-primary text-xs tracking-[0.3em] uppercase mb-3">
-            Live Music
-          </p>
-          <h1 className="font-serif text-5xl md:text-6xl font-black text-foreground mb-4">
-            What's <span className="gold-text">On Tonight</span>
-          </h1>
-          <p className="text-muted-foreground font-serif text-lg max-w-lg mx-auto">
-            Three stages, five bars, one legendary block on Sixth Street. Something's always
-            happening at Maggie's.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        baseName="hero-austin"
+        eyebrow="Live Music"
+        title={<>What's <span className="gold-text">On Tonight</span></>}
+        subtitle="Three stages, five bars, one legendary block on Sixth Street. Something's always happening at Maggie's."
+      />
 
       {/* ── STAGE LEGEND (CLICKABLE) ────────────────────────────── */}
-      <section className="bg-card border-b border-border py-4">
-        <div className="container mx-auto px-4 md:px-8">
-          <div className="flex flex-wrap items-center gap-4 justify-center">
-            <span className="font-display text-muted-foreground text-xs tracking-widest uppercase">
-              Filter:
-            </span>
-            {Object.entries(STAGE_COLORS).map(([stage, colors]) => {
-              const isActive = selectedStage === stage;
-              return (
-                <button
-                  key={stage}
-                  onClick={() => setSelectedStage(isActive ? null : stage)}
-                  className={`flex items-center gap-1.5 border rounded px-3 py-1 text-xs font-display tracking-wider transition-all ${
-                    isActive
-                      ? `bg-${colors.border.replace('border-', '')} bg-${colors.text.replace('text-', '')} text-white border-transparent`
-                      : `${colors.border} ${colors.text} hover:opacity-80 cursor-pointer`
-                  }`}
-                >
-                  <Music size={10} />
-                  {stage}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <StageFilterBar selectedStage={selectedStage} onSelect={setSelectedStage} />
 
       {/* ── LOGIN PROMPT (if not logged in) ───────────────────── */}
       {!user && (

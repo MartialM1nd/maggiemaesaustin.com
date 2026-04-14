@@ -29,12 +29,8 @@ export function NIP19Page() {
       return <ProfilePage pubkey={pubkey} />;
 
     case 'note':
-      // AI agent should implement note view here
-      return <div>Note placeholder</div>;
-
     case 'nevent':
-      // AI agent should implement event view here
-      return <div>Event placeholder</div>;
+      return <NotFound />;
 
     case 'naddr':
       if (decoded.data.kind === 31923) {

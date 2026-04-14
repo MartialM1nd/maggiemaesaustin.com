@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useCurrentUser } from './useCurrentUser';
+import { nowSecs } from '@/lib/utils';
 import type { NUser } from '@nostrify/react/login';
 
 // Types for Shakespeare API (compatible with OpenAI ChatCompletionMessageParam)
@@ -95,7 +96,7 @@ async function createNIP98Token(
     kind: 27235, // NIP-98 HTTP Auth
     content: '',
     tags,
-    created_at: Math.floor(Date.now() / 1000)
+    created_at: nowSecs()
   });
   
   // Return the token (base64 encoded event)

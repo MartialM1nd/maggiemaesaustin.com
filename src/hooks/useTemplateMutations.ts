@@ -3,6 +3,7 @@ import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAdminConfig } from './useAdminConfig';
 import { TEMPLATES_DTAG } from '@/lib/config';
+import { nowSecs } from '@/lib/utils';
 import type { EventTemplate } from './useTemplateList';
 
 /**
@@ -36,7 +37,7 @@ export function useTemplateMutations() {
         kind: 30078,
         content: JSON.stringify(templates),
         tags,
-        created_at: Math.floor(Date.now() / 1000),
+        created_at: nowSecs(),
       });
 
       await nostr.event(signed, { signal: AbortSignal.timeout(8000) });

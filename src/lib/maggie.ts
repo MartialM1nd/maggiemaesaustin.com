@@ -1,6 +1,7 @@
 import type { NostrEvent } from '@nostrify/nostrify';
 import type { MaggieStage } from './config';
 import { isValidTimestamp } from './validation';
+import { nowSecs } from './utils';
 
 /**
  * Timestamp bounds for NIP-52 calendar events.
@@ -88,7 +89,7 @@ export function parseMaggieEvent(event: NostrEvent): MaggieEvent | null {
 
 /** Returns true if the event is in the future (or currently ongoing). */
 export function isFutureEvent(event: MaggieEvent): boolean {
-  const now = Math.floor(Date.now() / 1000);
+  const now = nowSecs();
   // If the event has an end time, keep it visible until it ends
   if (event.end !== undefined) return event.end > now;
   // Otherwise keep it visible until 4 hours after start
@@ -154,7 +155,7 @@ export function generateICS(event: MaggieEvent): string {
 
   const start = formatICSDate(event.start);
   const end = event.end ? formatICSDate(event.end) : formatICSDate(event.start + 2 * 3600);
-  const now = formatICSDate(Math.floor(Date.now() / 1000));
+  const now = formatICSDate(nowSecs());
 
   const escapeICS = (text: string) =>
     text.replace(/[,;\\]/g, '\\$&').replace(/\n/g, '\\n');

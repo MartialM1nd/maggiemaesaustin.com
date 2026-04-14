@@ -2,6 +2,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { NostrEvent } from '@nostrify/nostrify';
+import { nowSecs } from '@/lib/utils';
 
 /**
  * Check if the current user follows a given pubkey.
@@ -71,7 +72,7 @@ export function useFollow() {
         kind: 3,
         content: '',
         tags: contacts,
-        created_at: Math.floor(Date.now() / 1000),
+        created_at: nowSecs(),
       });
       await nostr.event(signed, { signal: AbortSignal.timeout(5000) });
 

@@ -7,8 +7,7 @@ import { useAuthor } from '@/hooks/useAuthor';
 import { useUserNotes } from '@/hooks/useUserNotes';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useIsFollowing, useFollow } from '@/hooks/useFollow';
-import { useZaps } from '@/hooks/useZaps';
-import { useWallet } from '@/hooks/useWallet';
+
 import { ZapButton } from '@/components/ZapButton';
 import { NoteContent } from '@/components/NoteContent';
 import { Layout } from '@/components/Layout';
@@ -84,8 +83,6 @@ export function ProfilePage({ pubkey }: ProfilePageProps) {
   const { data: notesData, isLoading: notesLoading } = useUserNotes(pubkey);
   const { data: isFollowing = false } = useIsFollowing(pubkey);
   const { mutate: toggleFollow, isPending: followPending } = useFollow();
-  const { webln, activeNWC } = useWallet();
-
   const [showLogin, setShowLogin] = useState(false);
 
   const metadata = author?.metadata;
@@ -96,14 +93,6 @@ export function ProfilePage({ pubkey }: ProfilePageProps) {
   const website = metadata?.website;
   const lightningAddress = metadata?.lud16 || metadata?.lud06;
   const avatarUrl = isValidImageUrl(metadata?.picture || '') ? metadata?.picture : undefined;
-
-  const { totalSats: zapAmount } = useZaps(
-    currentUser ? [] : [],
-    webln,
-    activeNWC,
-    undefined,
-    lightningAddress || undefined
-  );
 
   const isOwnProfile = currentUser?.pubkey === pubkey;
 
@@ -239,7 +228,6 @@ export function ProfilePage({ pubkey }: ProfilePageProps) {
                     className="text-xs"
                   >
                     <Zap size={14} />
-                    {zapAmount > 0 && ` ${zapAmount}`}
                   </ZapButton>
                 )}
               </div>

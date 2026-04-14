@@ -2,6 +2,7 @@ import { useNostr } from "@nostrify/react";
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 
 import { useCurrentUser } from "./useCurrentUser";
+import { nowSecs } from "@/lib/utils";
 
 import type { NostrEvent } from "@nostrify/nostrify";
 
@@ -23,7 +24,7 @@ export function useNostrPublish(): UseMutationResult<NostrEvent> {
           kind: t.kind,
           content: t.content ?? "",
           tags,
-          created_at: t.created_at ?? Math.floor(Date.now() / 1000),
+          created_at: t.created_at ?? nowSecs(),
         });
 
         await nostr.event(event, { signal: AbortSignal.timeout(5000) });
