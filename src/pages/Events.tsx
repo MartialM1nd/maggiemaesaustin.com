@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { PageHero } from '@/components/PageHero';
+import { ResponsiveImage } from '@/components/ResponsiveImage';
 
 function EventSkeleton() {
   return (
