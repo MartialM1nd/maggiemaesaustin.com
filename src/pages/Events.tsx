@@ -163,7 +163,7 @@ export default function Events() {
                     </h3>
                     <div className="flex flex-wrap gap-6">
                       {group.events.map((event) => (
-                        <div key={`${event.raw.pubkey}:${event.id}`} className="flex-[1_1_calc(50%-1.5rem)] min-w-0 lg:max-w-[calc(50%-1.5rem)]">
+                        <div key={`${event.raw.pubkey}:${event.id}`} className="w-full md:flex-[1_1_calc(50%-1.5rem)] md:min-w-0 md:lg:max-w-[calc(50%-1.5rem)]">
                           <EventCard event={event} />
                         </div>
                       ))}
