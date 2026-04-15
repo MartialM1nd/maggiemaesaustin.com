@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { PageHero } from '@/components/PageHero';
 import { ResponsiveImage } from '@/components/ResponsiveImage';
+import { formatEventDate } from '@/lib/maggie';
 
 function EventSkeleton() {
   return (
@@ -139,14 +140,37 @@ export default function Events() {
             </div>
           )}
 
-          {/* Events grid */}
+          {/* Events grid - grouped by day */}
           {!isLoading && !isError && filteredEvents && filteredEvents.length > 0 && (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredEvents.map((event) => (
-                  <EventCard key={`${event.raw.pubkey}:${event.id}`} event={event} />
-                ))}
-              </div>
+              {(() => {
+                const groups: { date: string; events: typeof filteredEvents }[] = [];
+                let currentDate = '';
+
+                for (const event of filteredEvents) {
+                  const date = formatEventDate(event.start, event.timezone);
+                  if (date !== currentDate) {
+                    currentDate = date;
+                    groups.push({ date, events: [] });
+                  }
+                  groups[groups.length - 1].events.push(event);
+                }
+
+                return groups.map((group) => (
+                  <div key={group.date} className="mb-8">
+                    <h3 className="font-serif text-lg font-bold text-foreground mb-4 pb-2 border-b border-border">
+                      {group.date}
+                    </h3>
+                    <div className="flex flex-wrap gap-6">
+                      {group.events.map((event) => (
+                        <div key={`${event.raw.pubkey}:${event.id}`} className="flex-[1_1_calc(50%-1.5rem)] min-w-0 lg:max-w-[calc(50%-1.5rem)]">
+                          <EventCard event={event} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()}
 
               {/* Load More button */}
               {hasMore && (

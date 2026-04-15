@@ -10,13 +10,22 @@ import type { MaggieEvent } from '@/lib/maggie';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function unixToDate(unix: number): string {
-  return new Date(unix * 1000).toISOString().split('T')[0];
+function unixToDate(unix: number, tz: string = 'America/Chicago'): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(unix * 1000));
 }
 
-function unixToTime(unix: number): string {
-  const d = new Date(unix * 1000);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+function unixToTime(unix: number, tz: string = 'America/Chicago'): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(unix * 1000));
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -61,13 +70,14 @@ export function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFor
   const getInitialForm = () => {
     if (editingEvent) {
       const evt = editingEvent.event;
+      const tz = evt.timezone || 'America/Chicago';
       return {
         title: evt.title,
         summary: evt.summary,
         description: evt.description,
-        startDate: unixToDate(evt.start),
-        startTime: unixToTime(evt.start),
-        endTime: evt.end ? unixToTime(evt.end) : '',
+        startDate: unixToDate(evt.start, tz),
+        startTime: unixToTime(evt.start, tz),
+        endTime: evt.end ? unixToTime(evt.end, tz) : '',
         location: evt.location,
         stage: evt.stage || MAGGIE_MAES_STAGES[0] as string,
         price: evt.price,
