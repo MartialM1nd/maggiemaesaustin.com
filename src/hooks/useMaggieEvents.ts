@@ -49,11 +49,10 @@ export function useMaggieEvents(limit: number = 20) {
         { signal },
       );
 
-      const parsed = parseMaggieEventList(events)
+      return parseMaggieEventList(events)
         .filter(isFutureEvent)
-        .sort(sortByStart);
-
-      return parsed.slice(0, limit);
+        .sort(sortByStart)
+        .slice(0, limit);
     },
     staleTime: 60_000,
     retry: 1,
@@ -62,7 +61,6 @@ export function useMaggieEvents(limit: number = 20) {
 
 /**
  * Query past NIP-52 kind:31923 calendar events for Maggie Mae's.
- * Used by Admin page to view past events.
  * 
  * @param limit - Maximum number of events to return (default 10)
  */

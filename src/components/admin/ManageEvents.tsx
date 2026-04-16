@@ -99,13 +99,18 @@ export interface ManageEventsProps {
 }
 
 export function ManageEvents({ onEditEvent }: ManageEventsProps) {
-  const { data: upcomingEvents, isLoading: upcomingLoading } = useMaggieEvents();
+  const [limit, setLimit] = useState(20);
+  const { data: events, isLoading } = useMaggieEvents(limit);
   const { mutateAsync: createEvent } = useNostrPublish();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { user } = useCurrentUser();
-  const currentUserPubkey = user?.pubkey.toLowerCase();
+
+  const currentUserPubkey = user?.pubkey?.toLowerCase();
+
+  // Filter state
+  const [showMyOnly, setShowMyOnly] = useState(false);
 
   // Past events state
   const [showPast, setShowPast] = useState(false);
@@ -113,6 +118,13 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
   const [pastLimit, setPastLimit] = useState(10);
 
   const { data: newPastEvents, isLoading: pastLoading } = useMaggiePastEvents(pastLimit);
+
+  // Filter events by current user if enabled
+  const filteredEvents = showMyOnly && currentUserPubkey
+    ? events?.filter(e => e.raw.pubkey.toLowerCase() === currentUserPubkey)
+    : events;
+
+  const hasMore = filteredEvents && filteredEvents.length >= limit;
 
   useEffect(() => {
     if (newPastEvents && showPast) {
@@ -165,7 +177,7 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
     </div>
   );
 
-  if (upcomingLoading || (showPast && pastLoading)) {
+  if (isLoading || (showPast && pastLoading)) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground py-8">
         <Loader2 size={16} className="animate-spin" />
@@ -226,25 +238,49 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
     );
   }
 
-  const hasUpcomingEvents = upcomingEvents && upcomingEvents.length > 0;
+  const hasEvents = filteredEvents && filteredEvents.length > 0;
 
   return (
     <div className="space-y-4">
       {!showPast && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <button
             onClick={() => { setShowPast(true); setPastLimit(10); }}
             className="text-sm text-muted-foreground hover:text-primary transition-colors font-display tracking-wider"
           >
             Show Past Events →
           </button>
+          {user && (
+            <button
+              onClick={() => setShowMyOnly(!showMyOnly)}
+              className={`text-xs px-3 py-1.5 rounded border transition-colors font-display tracking-wider ${
+                showMyOnly
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'text-muted-foreground border-border hover:border-primary/50 hover:text-primary'
+              }`}
+            >
+              {showMyOnly ? 'Showing My Events' : 'Show My Events Only'}
+            </button>
+          )}
         </div>
       )}
-      {hasUpcomingEvents ? (
-        renderEventList(upcomingEvents)
+      {hasEvents ? (
+        <>
+          {renderEventList(filteredEvents)}
+          {hasMore && (
+            <button
+              onClick={() => setLimit((l) => l + 20)}
+              className="w-full py-2 text-sm text-muted-foreground hover:text-primary border border-border rounded hover:border-primary/50 transition-colors"
+            >
+              Load More
+            </button>
+          )}
+        </>
       ) : (
         <div className="py-8 text-center">
-          <p className="text-muted-foreground font-serif text-sm">No upcoming events found. Publish one using the Publish Event tab.</p>
+          <p className="text-muted-foreground font-serif text-sm">
+            {showMyOnly ? 'You have not published any events yet.' : 'No upcoming events found. Publish one using the Publish Event tab.'}
+          </p>
         </div>
       )}
       <ConfirmDialog
