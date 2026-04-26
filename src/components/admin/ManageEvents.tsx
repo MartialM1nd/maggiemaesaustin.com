@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -109,6 +109,9 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
 
   const currentUserPubkey = user?.pubkey?.toLowerCase();
 
+  // Ref for scroll position after load more
+  const loadMoreRef = useRef<HTMLButtonElement>(null);
+
   // Filter state
   const [showMyOnly, setShowMyOnly] = useState(false);
 
@@ -125,6 +128,26 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
     : events;
 
   const hasMore = filteredEvents && filteredEvents.length >= limit;
+
+  // Restore scroll position after loading more events
+  useEffect(() => {
+    if (limit > 20) {
+      const saved = sessionStorage.getItem('maggie-admin-scroll');
+      if (saved) {
+        const pos = parseInt(saved, 10);
+        // Use multiple attempts to ensure scroll works
+        setTimeout(() => window.scrollTo(0, pos), 0);
+        setTimeout(() => window.scrollTo(0, pos), 50);
+        setTimeout(() => window.scrollTo(0, pos), 100);
+        sessionStorage.removeItem('maggie-admin-scroll');
+      }
+    }
+  }, [limit]);
+
+  const handleLoadMore = () => {
+    sessionStorage.setItem('maggie-admin-scroll', String(window.scrollY));
+    setLimit((l) => l + 20);
+  };
 
   useEffect(() => {
     if (newPastEvents && showPast) {
@@ -269,7 +292,8 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
           {renderEventList(filteredEvents)}
           {hasMore && (
             <button
-              onClick={() => setLimit((l) => l + 20)}
+              ref={loadMoreRef}
+              onClick={handleLoadMore}
               className="w-full py-2 text-sm text-muted-foreground hover:text-primary border border-border rounded hover:border-primary/50 transition-colors"
             >
               Load More

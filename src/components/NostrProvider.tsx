@@ -68,8 +68,8 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
         return routes;
       },
       eventRouter(event: NostrEvent) {
-        if (event.kind === 31923 || event.kind === 30078) {
-          // Bar calendar events and admin list publish to bar relays
+        if (event.kind === 31923 || event.kind === 30078 || event.kind === 5) {
+          // Bar calendar events, admin list, and deletions (kind:5) publish to bar relays
           return barRelaysRef.current;
         }
 

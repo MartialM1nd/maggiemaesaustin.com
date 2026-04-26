@@ -247,6 +247,7 @@ export function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFor
   };
 
   const fieldClass = 'w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground font-serif focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground';
+  const dateClass = 'w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground font-serif focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground [&::-webkit-calendar-picker-indicator]:invert';
   const labelClass = 'block font-display text-xs tracking-widest uppercase text-muted-foreground mb-1.5';
 
   return (
@@ -280,7 +281,13 @@ export function PublishEventForm({ editingEvent, onCancelEdit }: PublishEventFor
 
         <div>
           <label className={labelClass}>Date *</label>
-          <input type="date" className={fieldClass} value={form.startDate} onChange={(e) => set('startDate', e.target.value)} required />
+          <input 
+            type="date" 
+            className={dateClass} 
+            value={form.startDate} 
+            onChange={(e) => set('startDate', e.target.value)} 
+            required 
+          />
         </div>
 
         <div>

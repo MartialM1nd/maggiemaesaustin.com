@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { Calendar, ExternalLink, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/Layout';
@@ -52,6 +52,28 @@ export default function Events() {
   const { data: events, isLoading, isError } = useMaggieEvents(limit);
   const { user } = useCurrentUser();
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
+
+  // Ref for scroll position after load more
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Restore scroll position after loading more events
+  useEffect(() => {
+    if (limit > INITIAL_LIMIT) {
+      const saved = sessionStorage.getItem('maggie-events-scroll');
+      if (saved) {
+        const pos = parseInt(saved, 10);
+        setTimeout(() => window.scrollTo(0, pos), 0);
+        setTimeout(() => window.scrollTo(0, pos), 50);
+        setTimeout(() => window.scrollTo(0, pos), 100);
+        sessionStorage.removeItem('maggie-events-scroll');
+      }
+    }
+  }, [limit]);
+
+  const handleLoadMore = () => {
+    sessionStorage.setItem('maggie-events-scroll', String(window.scrollY));
+    setLimit((l) => l + LOAD_MORE_INCREMENT);
+  };
 
   const filteredEvents = selectedStage
     ? events?.filter((e) => e.stage === selectedStage)
@@ -174,10 +196,10 @@ export default function Events() {
 
               {/* Load More button */}
               {hasMore && (
-                <div className="mt-8 flex justify-center">
+                <div ref={loadMoreRef} className="mt-8 flex justify-center">
                   <Button
                     variant="outline"
-                    onClick={() => setLimit((l) => l + LOAD_MORE_INCREMENT)}
+                    onClick={handleLoadMore}
                     className="flex items-center gap-2 font-display text-xs tracking-widest"
                     disabled={isLoading}
                   >
