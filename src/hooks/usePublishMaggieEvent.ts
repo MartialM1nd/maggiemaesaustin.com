@@ -71,16 +71,19 @@ export function usePublishMaggieEvent() {
     mutationFn: async (input: PublishEventInput) => {
       if (!user) throw new Error('Not logged in');
 
-      const isRecurring = input.recurring && input.recurring !== '';
-      const baseInterval = isRecurring ? RECURRENCE_INTERVALS[input.recurring as 'weekly' | 'biweekly' | 'monthly'] : 0;
-      // Use provided amount, or default to max based on recurrence type
-      const maxForType = { weekly: 26, biweekly: 13, monthly: 6 };
-      const maxAmount = input.recurring ? maxForType[input.recurring as keyof typeof maxForType] : 26;
-      const numEvents = isRecurring ? (input.recurringAmount || maxAmount) : 1;
-      const recurringUntil = isRecurring ? getRecurringUntil() : undefined;
+const isRecurring = input.recurring && input.recurring !== '';
+  const baseInterval = isRecurring ? RECURRENCE_INTERVALS[input.recurring as 'weekly' | 'biweekly' | 'monthly'] : 0;
+  // Use provided amount, or default to max based on recurrence type
+  const maxForType = { weekly: 26, biweekly: 13, monthly: 6 };
+  const maxAmount = input.recurring ? maxForType[input.recurring as keyof typeof maxForType] : 26;
+  const numEvents = isRecurring ? (input.recurringAmount || maxAmount) : 1;
+  const recurringUntil = isRecurring ? getRecurringUntil() : undefined;
+  
+  // Generate a series identifier for recurring events (used to delete entire series)
+  const seriesId = `maggie-series-${Date.now()}`;
 
-      // Create multiple events if recurring
-      for (let i = 0; i < numEvents; i++) {
+  // Create multiple events if recurring
+  for (let i = 0; i < numEvents; i++) {
         const eventStart = Math.floor((new Date(input.startLocal).getTime() + i * baseInterval * 1000) / 1000);
         const eventEnd = input.endLocal 
           ? Math.floor((new Date(input.endLocal).getTime() + i * baseInterval * 1000) / 1000)
@@ -106,6 +109,7 @@ export function usePublishMaggieEvent() {
           : `${generateDTag()}-${i}`;
 
         const tags: string[][] = [
+          ['a', seriesId], // Series identifier for bulk delete
           ['d', dTag],
           ['title', input.title],
           ['summary', input.summary || input.title],

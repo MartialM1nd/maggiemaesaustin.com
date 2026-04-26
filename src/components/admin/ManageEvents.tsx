@@ -8,9 +8,12 @@ import { genUserName } from '@/lib/genUserName';
 import { isValidImageUrl } from '@/lib/validation';
 import { useMaggieEvents, useMaggiePastEvents } from '@/hooks/useMaggieEvents';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useNostr } from '@nostrify/react';
+import type { NostrEvent } from '@nostrify/nostrify';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/useToast';
+import { MAGGIE_MAES_TAG } from '@/lib/config';
 import { formatEventDate, formatEventTime, type MaggieEvent } from '@/lib/maggie';
 
 // ── EventListItem ─────────────────────────────────────────────────────────────
@@ -20,10 +23,11 @@ interface EventListItemProps {
   isEventOwner: boolean;
   onEditEvent: (event: MaggieEvent) => void;
   onRequestDelete: (event: MaggieEvent) => void;
+  onRequestSeriesDelete: (seriesId: string) => void;
   deletingId: string | null;
 }
 
-function EventListItem({ event, isEventOwner, onEditEvent, onRequestDelete, deletingId }: EventListItemProps) {
+function EventListItem({ event, isEventOwner, onEditEvent, onRequestDelete, onRequestSeriesDelete, deletingId }: EventListItemProps) {
   const author = useAuthor(event.raw.pubkey);
   const meta = author.data?.metadata;
   const authorName = meta?.name ?? genUserName(event.raw.pubkey);
@@ -85,6 +89,34 @@ function EventListItem({ event, isEventOwner, onEditEvent, onRequestDelete, dele
               <Trash2 size={12} />
             )}
             Delete
+          </button>
+        )}
+        {isEventOwner && event.series && (
+          <button
+            onClick={() => {
+              console.log('[All Button] Clicked with series:', event.series);
+              onRequestSeriesDelete(event.series!);
+            }}
+            className="flex-shrink-0 flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400 transition-colors font-display tracking-wider"
+            title="Delete entire recurring series"
+          >
+            <Trash2 size={12} />
+            All
+          </button>
+        )}
+        {isEventOwner && !event.series && event.id && (
+          <button
+            onClick={() => {
+              // For events without series tag, use d-tag prefix (remove trailing -N)
+              const base = event.id.replace(/-(\d+)$/, '-');
+              console.log('[All Button] Clicked with base d-tag:', base);
+              onRequestSeriesDelete(base);
+            }}
+            className="flex-shrink-0 flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400 transition-colors font-display tracking-wider"
+            title="Delete entire recurring series"
+          >
+            <Trash2 size={12} />
+            All
           </button>
         )}
       </div>
@@ -185,6 +217,63 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
     }
   };
 
+  // Handle delete series - delete all events in a recurring series
+  const [pendingSeriesDelete, setPendingSeriesDelete] = useState<string | null>(null);
+  const { nostr } = useNostr();
+
+  const handleConfirmSeriesDelete = async () => {
+    if (!pendingSeriesDelete) return;
+    const baseDTag = pendingSeriesDelete;
+    console.log('[Delete Series] Starting with base d-tag:', baseDTag);
+    setPendingSeriesDelete(null);
+    try {
+      // Try to find by series tag first
+      const seriesEvents = await nostr.query([{
+        kinds: [31923],
+        '#a': [baseDTag],
+        limit: 50,
+      }]);
+      console.log('[Delete Series] Events with series tag:', seriesEvents.length);
+      
+      let eventsToDelete: NostrEvent[] = [];
+
+      // If found, use those. Otherwise try d-tag prefix
+      if (seriesEvents.length > 0) {
+        eventsToDelete = seriesEvents;
+      } else {
+        // Query all events and filter by d-tag prefix
+        const allEvents = await nostr.query([{
+          kinds: [31923],
+          limit: 200,
+        }]);
+        console.log('[Delete Series] Total events fetched:', allEvents.length);
+        
+        eventsToDelete = allEvents.filter(e => {
+          const dTag = e.tags.find(([t]) => t === 'd')?.[1];
+          const match = dTag && dTag.startsWith(baseDTag);
+          if (match) console.log('[Delete Series] Matching d-tag:', dTag);
+          return match;
+        });
+      }
+      console.log('[Delete Series] Events to delete:', eventsToDelete.length);
+      
+      // Delete each event in the series
+      for (const evt of eventsToDelete) {
+        await createEvent({
+          kind: 5,
+          content: 'Recurring series deleted by admin',
+          tags: [['e', evt.id]],
+        });
+      }
+      toast({ title: 'Series deleted', description: `Deleted ${eventsToDelete.length} events in the series.` });
+      queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
+      queryClient.invalidateQueries({ queryKey: ['maggie-past-events'] });
+    } catch (err) {
+      console.error('[Delete Series] Error:', err);
+      toast({ title: 'Delete failed', description: String(err), variant: 'destructive' });
+    }
+  };
+
   const renderEventList = (events: MaggieEvent[]) => (
     <div className="space-y-3 max-w-2xl">
       {events.map((event) => (
@@ -194,6 +283,7 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
           isEventOwner={currentUserPubkey === event.raw.pubkey.toLowerCase()}
           onEditEvent={onEditEvent}
           onRequestDelete={handleRequestDelete}
+          onRequestSeriesDelete={(seriesId) => setPendingSeriesDelete(seriesId)}
           deletingId={deletingId}
         />
       ))}
@@ -257,6 +347,15 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
           onConfirm={handleConfirmDelete}
           destructive
         />
+        <ConfirmDialog
+          open={!!pendingSeriesDelete}
+          onOpenChange={(open) => !open && setPendingSeriesDelete(null)}
+          title="Delete Recurring Series"
+          description="Delete ALL events in this recurring series? This will request deletion of each event via NIP-09."
+          confirmLabel="Delete All"
+          onConfirm={handleConfirmSeriesDelete}
+          destructive
+        />
       </div>
     );
   }
@@ -314,6 +413,15 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
         description={`Delete "${pendingDelete?.title}"? This will request deletion via NIP-09.`}
         confirmLabel="Delete"
         onConfirm={handleConfirmDelete}
+        destructive
+      />
+      <ConfirmDialog
+        open={!!pendingSeriesDelete}
+        onOpenChange={(open) => !open && setPendingSeriesDelete(null)}
+        title="Delete Recurring Series"
+        description="Delete ALL events in this recurring series? This will request deletion of each event via NIP-09."
+        confirmLabel="Delete All"
+        onConfirm={handleConfirmSeriesDelete}
         destructive
       />
     </div>
