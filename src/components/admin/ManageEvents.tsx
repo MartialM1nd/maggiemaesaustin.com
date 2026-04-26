@@ -93,10 +93,7 @@ function EventListItem({ event, isEventOwner, onEditEvent, onRequestDelete, onRe
         )}
         {isEventOwner && event.series && (
           <button
-            onClick={() => {
-              console.log('[All Button] Clicked with series:', event.series);
-              onRequestSeriesDelete(event.series!);
-            }}
+            onClick={() => onRequestSeriesDelete(event.series!)}
             className="flex-shrink-0 flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400 transition-colors font-display tracking-wider"
             title="Delete entire recurring series"
           >
@@ -107,9 +104,7 @@ function EventListItem({ event, isEventOwner, onEditEvent, onRequestDelete, onRe
         {isEventOwner && !event.series && event.id && (
           <button
             onClick={() => {
-              // For events without series tag, use d-tag prefix (remove trailing -N)
               const base = event.id.replace(/-(\d+)$/, '-');
-              console.log('[All Button] Clicked with base d-tag:', base);
               onRequestSeriesDelete(base);
             }}
             className="flex-shrink-0 flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400 transition-colors font-display tracking-wider"
@@ -224,40 +219,30 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
   const handleConfirmSeriesDelete = async () => {
     if (!pendingSeriesDelete) return;
     const baseDTag = pendingSeriesDelete;
-    console.log('[Delete Series] Starting with base d-tag:', baseDTag);
     setPendingSeriesDelete(null);
     try {
-      // Try to find by series tag first
       const seriesEvents = await nostr.query([{
         kinds: [31923],
         '#a': [baseDTag],
         limit: 50,
       }]);
-      console.log('[Delete Series] Events with series tag:', seriesEvents.length);
       
       let eventsToDelete: NostrEvent[] = [];
 
-      // If found, use those. Otherwise try d-tag prefix
       if (seriesEvents.length > 0) {
         eventsToDelete = seriesEvents;
       } else {
-        // Query all events and filter by d-tag prefix
         const allEvents = await nostr.query([{
           kinds: [31923],
           limit: 200,
         }]);
-        console.log('[Delete Series] Total events fetched:', allEvents.length);
         
         eventsToDelete = allEvents.filter(e => {
           const dTag = e.tags.find(([t]) => t === 'd')?.[1];
-          const match = dTag && dTag.startsWith(baseDTag);
-          if (match) console.log('[Delete Series] Matching d-tag:', dTag);
-          return match;
+          return dTag && dTag.startsWith(baseDTag);
         });
       }
-      console.log('[Delete Series] Events to delete:', eventsToDelete.length);
       
-      // Delete each event in the series
       for (const evt of eventsToDelete) {
         await createEvent({
           kind: 5,
@@ -269,7 +254,6 @@ export function ManageEvents({ onEditEvent }: ManageEventsProps) {
       queryClient.invalidateQueries({ queryKey: ['maggie-events'] });
       queryClient.invalidateQueries({ queryKey: ['maggie-past-events'] });
     } catch (err) {
-      console.error('[Delete Series] Error:', err);
       toast({ title: 'Delete failed', description: String(err), variant: 'destructive' });
     }
   };
